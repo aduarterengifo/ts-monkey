@@ -1,0 +1,15 @@
+import { isKNode } from 'src/schemas/nodes/union'
+
+export const isLetStatement = isKNode('LetStmt')
+export const isReturnStatement = isKNode('ReturnStmt')
+export const isExpressionStatement = isKNode('ExpStmt')
+export const isIdentExpression = isKNode('IdentExp')
+export const isIntegerLiteral = isKNode('IntExp')
+export const isPrefixExpression = isKNode('PrefixExp')
+export const isInfixExpression = isKNode('InfixExp')
+export const isBooleanExpression = isKNode('BoolExp')
+export const isIfExpression = isKNode('IfExp')
+export const isBlockStatement = isKNode('BlockStmt')
+export const isFunctionLiteral = isKNode('FuncExp')
+export const isCallExpression = isKNode('CallExp')
+export const isStringLiteral = isKNode('StrExp')

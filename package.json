@@ -1,0 +1,84 @@
+{
+	"name": "@a33/kenneth",
+	"version": "0.0.0",
+	"type": "module",
+	"description": "monkey lang in ts/effect",
+	"publishConfig": {
+		"access": "public",
+		"directory": "dist"
+	},
+	"scripts": {
+		"check": "tsc -b tsconfig.json",
+		"lint": "eslint \"**/{src,test,examples,scripts,dtslint}/**/*.{ts,mjs}\"",
+		"lint-fix": "pnpm lint --fix",
+		"test": "bun test",
+		"coverage": "bun test --coverage",
+		"repl": " bun src/services/cli.ts repl",
+		"dev": "vite"
+	},
+	"dependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@effect/cli": "0.54.1",
+		"@effect/opentelemetry": "0.42.7",
+		"@effect/platform": "0.75.1",
+		"@effect/platform-bun": "0.55.1",
+		"@effect/platform-node": "0.71.1",
+		"@opentelemetry/exporter-trace-otlp-http": "0.57.1",
+		"@opentelemetry/sdk-metrics": "1.30.1",
+		"@opentelemetry/sdk-trace-base": "1.30.1",
+		"@opentelemetry/sdk-trace-node": "1.30.1",
+		"@opentelemetry/sdk-trace-web": "1.30.1",
+		"@tailwindcss/vite": "^4.0.6",
+		"@types/react": "^19.0.9",
+		"@types/react-dom": "^19.0.3",
+		"@vitejs/plugin-react-swc": "^3.8.0",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
+		"effect": "3.12.7",
+		"eval": "0.1.8",
+		"lucide-react": "^0.475.0",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0",
+		"tailwind-merge": "^3.0.1",
+		"tailwindcss-animate": "^1.0.7"
+	},
+	"devDependencies": {
+		"@babel/cli": "7.26.4",
+		"@babel/core": "7.26.7",
+		"@babel/plugin-transform-export-namespace-from": "7.25.9",
+		"@babel/plugin-transform-modules-commonjs": "7.26.3",
+		"@effect/build-utils": "0.7.8",
+		"@effect/eslint-plugin": "0.2.0",
+		"@effect/language-service": "0.2.0",
+		"@effect/vitest": "0.17.3",
+		"@eslint/compat": "1.2.5",
+		"@eslint/eslintrc": "3.2.0",
+		"@eslint/js": "9.19.0",
+		"@types/bun": "1.2.0",
+		"@types/node": "22.10.10",
+		"@typescript-eslint/eslint-plugin": "8.21.0",
+		"@typescript-eslint/parser": "8.21.0",
+		"autoprefixer": "^10.4.20",
+		"babel-plugin-annotate-pure-calls": "0.5.0",
+		"eslint": "9.19.0",
+		"eslint-import-resolver-typescript": "3.7.0",
+		"eslint-plugin-codegen": "0.29.0",
+		"eslint-plugin-import": "2.31.0",
+		"eslint-plugin-simple-import-sort": "12.1.1",
+		"eslint-plugin-sort-destructure-keys": "2.0.0",
+		"postcss": "^8.5.2",
+		"tailwindcss": "^4.0.6",
+		"tsx": "4.19.2",
+		"typescript": "5.7.3",
+		"vite": "^6.1.0",
+		"vitest": "3.0.4"
+	},
+	"effect": {
+		"generateExports": {
+			"include": ["**/*.ts"]
+		},
+		"generateIndex": {
+			"include": ["**/*.ts"]
+		}
+	}
+}
