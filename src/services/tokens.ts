@@ -8,7 +8,6 @@ export const keywords = {
 	if: TokenType.IF,
 	else: TokenType.ELSE,
 	return: TokenType.RETURN,
-	// diff: TokenType.DIFF, // uncomment to have a special DIFF NODE
 } as const
 
 export function lookupIndent(ident: string) {
