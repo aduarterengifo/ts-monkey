@@ -637,7 +637,7 @@ describe('eval', () => {
 
 			const program = yield* parser.parseProgram
 			const env = createEnvironment()
-			const evaluated = yield* Eval(program)(env)
+			const evaluated = yield* Eval(program)(env, undefined)
 			expect(isFunctionObj(evaluated)).toBe(true)
 			if (isFunctionObj(evaluated)) {
 				expect(evaluated.params.length).toBe(1)
