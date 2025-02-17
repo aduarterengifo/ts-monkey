@@ -1,6 +1,6 @@
 # ts-monkey
 
-Typescript implementation of monkey interpreter from [Writing An Interpreter In Go][https://interpreterbook.com]
+Typescript implementation of monkey interpreter from [Writing An Interpreter In Go](https://interpreterbook.com)
 
 uses [effect](https://effect.website)
 
@@ -17,4 +17,4 @@ adds extensions for symbolic differentiation.
 
 ## REPL 
 
-[repl](ts-monkey-mu.vercel.app)
+[repl](https://ts-monkey-mu.vercel.app)
