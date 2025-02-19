@@ -6,7 +6,6 @@ import {
 	nativeBoolToObjectBool,
 	NULL,
 	TRUE,
-	type Obj,
 	createReturnObj,
 	isReturnObj,
 	createFunctionObj,
@@ -49,6 +48,8 @@ import { nativeToIntExp } from 'src/schemas/nodes/exps/int'
 import { InfixExp } from 'src/schemas/nodes/exps/infix'
 import { logDebug } from 'effect/Effect'
 import { builtInFnMap } from '../object/builtins'
+import { infixObjSchema } from '@/schemas/objs/infix'
+import { Obj } from '@/schemas/objs/union'
 
 // TODO move diff to ENV!
 
@@ -164,6 +165,7 @@ export const applyFunction =
 	(args: Obj[]) =>
 		Match.value(fn).pipe(
 			Match.tag('BuiltInObj', (fn) => builtInFnMap[fn.fn](...args)), // naming is a bit off
+			// TODO Move env to a applicator, and keep just raw data in the function obj, which can be operated on by a function.
 			Match.tag('FunctionObj', (fn) =>
 				extendFunctionEnv(fn, args).pipe(
 					Effect.flatMap((env) => Eval(fn.body)(env, ident)),
@@ -260,7 +262,7 @@ export const evalInfixExpression =
 				isInfixObj(left) ||
 				isInfixObj(right)
 			) {
-				return createInfixObj(left, operator, right)
+				return infixObjSchema.make({left, operator, right}) 
 			}
 			if (isIntegerObj(left) && isIntegerObj(right)) {
 				return evalIntegerInfixExpression(operator, left, right)

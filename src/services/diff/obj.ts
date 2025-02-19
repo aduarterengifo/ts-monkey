@@ -12,6 +12,7 @@ import { PolynomialObj, polynomialObjSchema } from '@/schemas/objs/unions/polyno
 import { polynomialOperatorSchema } from '@/schemas/polynomial-operator'
 import { IdentObj, identObjSchema } from '@/schemas/objs/ident'
 import { IntObj, intObjSchema } from '@/schemas/objs/int'
+import { infixObjSchema } from '@/schemas/objs/infix'
 
 export const newTerm = (coeff: number, x: IdentObj, power: number) =>
 	createInfixObj(
@@ -111,19 +112,19 @@ export const diffPolynomial = (
 										(left._tag === 'InfixObj' && left.operator === TokenType.PLUS) ||
 										(right._tag === 'InfixObj' && right.operator === TokenType.PLUS)
 									) {
-										return createInfixObj(
-											createInfixObj(
-												yield* diffPolynomial(left, x),
-												TokenType.ASTERISK,
-												right,
-											),
-											TokenType.PLUS,
-											createInfixObj(
-												left,
-												TokenType.ASTERISK,
-												yield* diffPolynomial(right, x),
-											),
-										)
+										return infixObjSchema.make({
+											left: infixObjSchema.make({
+												left: yield* diffPolynomial(left, x), 
+												operator: TokenType.ASTERISK,
+												right
+											}),
+											operator: TokenType.PLUS,
+											right: infixObjSchema.make({
+												left, 
+												operator: TokenType.ASTERISK,
+												right: yield* diffPolynomial(right, x)
+											})
+										})
 									}
 									return yield* processTerm(obj, x) // leaf
 								}),
@@ -139,23 +140,27 @@ export const diffPolynomial = (
 										(left._tag === 'InfixObj' && left.operator === TokenType.PLUS) ||
 										(right._tag === 'InfixObj' && right.operator === TokenType.PLUS)
 									) {
-										return createInfixObj(
-											createInfixObj(
-												createInfixObj(
-													yield* diffPolynomial(left, x),
-													TokenType.ASTERISK,
-													right,
-												),
-												TokenType.MINUS,
-												createInfixObj(
-													left,
-													TokenType.ASTERISK,
-													yield* diffPolynomial(right, x),
-												),
-											),
-											TokenType.SLASH,
-											createInfixObj(right, TokenType.EXPONENT, createIntegerObj(2)),
-										)
+										return infixObjSchema.make({
+											left: infixObjSchema.make({
+												left: infixObjSchema.make({
+													left: yield* diffPolynomial(left, x), 
+													operator: TokenType.ASTERISK, 
+													right
+												}),
+												operator: TokenType.MINUS, 
+												right: infixObjSchema.make({
+													left, 
+													operator: TokenType.ASTERISK, 
+													right: yield* diffPolynomial(right, x)
+												})
+											}), 
+											operator: TokenType.SLASH, 
+											right: 							infixObjSchema.make({
+												left: right, 
+												operator: TokenType.EXPONENT, 
+												right: intObjSchema.make({value: 2})
+											})
+										})
 									}
 									return yield* processTerm(obj, x) // leaf
 								}),
@@ -167,22 +172,22 @@ export const diffPolynomial = (
 					Match.when(TokenType.PLUS, () =>
 						Effect.gen(function* () {
 							return yield* Effect.succeed(
-								createInfixObj(
-									yield* diffPolynomial(left, x),
-									TokenType.PLUS,
-									yield* diffPolynomial(right, x),
-								),
+								infixObjSchema.make({
+									left: yield* diffPolynomial(left, x), 
+									operator: TokenType.PLUS, 
+									right: yield* diffPolynomial(right, x)
+								})
 							)
 						}),
 					),
 					Match.when(TokenType.MINUS, () =>
 						Effect.gen(function* () {
 							return yield* Effect.succeed(
-								createInfixObj(
-									yield* diffPolynomial(left, x),
-									TokenType.PLUS,
-									yield* diffPolynomial(right, x),
-								),
+								infixObjSchema.make({
+									left: yield* diffPolynomial(left, x), 
+									operator: TokenType.PLUS, 
+									right: yield* diffPolynomial(right, x)
+								})
 							)
 						}),
 					),
