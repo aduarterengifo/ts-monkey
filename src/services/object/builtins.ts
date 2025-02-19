@@ -54,7 +54,12 @@ const diff2 = (...args: Obj[]) =>
 	})
 
 export const builtins = {
-	len: createBuiltInObj((...args: Obj[]) =>
+	len: createBuiltInObj('len'),
+	diff: createBuiltInObj('diff'),
+} as const
+
+export const builtInFnMap = {
+	len: (...args: Obj[]) =>
 		Effect.gen(function* () {
 			if (args.length !== 1) {
 				return yield* Effect.succeed(
@@ -79,8 +84,7 @@ export const builtins = {
 				),
 			)
 		}),
-	),
-	diff: createBuiltInObj(diff2),
+	diff: diff2
 } as const
 
 const builtinKeys = Object.keys(builtins) as (keyof typeof builtins)[] // hack

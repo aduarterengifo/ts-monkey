@@ -1,41 +1,35 @@
-import { Data, type Effect } from 'effect'
+import { Data } from 'effect'
 import type { Environment } from './environment'
 import type { IdentExp } from 'src/schemas/nodes/exps/ident'
 import type { BlockStmt } from 'src/schemas/nodes/stmts/block'
-import type { KennethParseError } from 'src/errors/kenneth/parse'
-import type { ParseError } from 'effect/ParseResult'
 import type { InfixOperator } from 'src/schemas/infix-operator'
-import type { InfixExp } from 'src/schemas/nodes/exps/infix'
 
 export interface InternalObj {
-	readonly inspect: () => string
 }
 
 export type Obj = Data.TaggedEnum<{
-	IntegerObj: InternalObj & {
+	IntegerObj: {
 		readonly value: number
 	}
-	BooleanObj: InternalObj & { readonly value: boolean }
-	NullObj: InternalObj
-	ReturnObj: InternalObj & { readonly value: Obj }
-	ErrorObj: InternalObj & { readonly message: string }
-	FunctionObj: InternalObj & {
+	BooleanObj:  { readonly value: boolean }
+	NullObj: {}
+	ReturnObj:  { readonly value: Obj }
+	ErrorObj:  { readonly message: string }
+	FunctionObj: {
 		readonly params: readonly IdentExp[]
 		readonly body: BlockStmt
 		readonly env: Environment
 	}
-	StringObj: InternalObj & {
+	StringObj: {
 		readonly value: string
 	}
-	BuiltInObj: InternalObj & {
-		readonly fn: (
-			...args: Obj[]
-		) => Effect.Effect<Obj, KennethParseError | ParseError | never, never>
+	BuiltInObj: {
+		readonly fn: 'len' | 'diff'
 	}
-	IdentObj: InternalObj & {
+	IdentObj:  {
 		readonly identExp: IdentExp
 	}
-	InfixObj: InternalObj & {
+	InfixObj: {
 		readonly left: Obj
 		readonly right: Obj
 		readonly operator: InfixOperator
@@ -84,13 +78,11 @@ export const objMatch = $match
 export const createIntegerObj = (value: number) =>
 	IntegerObj({
 		value,
-		inspect: () => String(value),
 	})
 
 const createBooleanObj = (value: boolean) =>
 	BooleanObj({
 		value,
-		inspect: () => String(value),
 	})
 
 export const FALSE = createBooleanObj(false)
@@ -99,19 +91,16 @@ export const TRUE = createBooleanObj(true)
 export const nativeBoolToObjectBool = (input: boolean) => (input ? TRUE : FALSE)
 
 const createNullObj = () =>
-	NullObj({
-		inspect: () => 'null',
-	})
+	NullObj()
 
 export const NULL = createNullObj()
 
 export const createReturnObj = (value: Obj) =>
-	ReturnObj({ value, inspect: value.inspect })
+	ReturnObj({ value })
 
 export const createErrorObj = (message: string) =>
 	ErrorObj({
 		message,
-		inspect: () => `ERROR: ${message}`,
 	})
 
 export const createFunctionObj = (
@@ -123,33 +112,23 @@ export const createFunctionObj = (
 		params,
 		body,
 		env,
-		inspect: () => `
-		fn (${params.map((p) => p.string()).join(', ')}) { 
-		${body.string()}
-		}
-		`,
 	})
 
 export const createStringObj = (value: string) =>
 	StringObj({
 		value,
-		inspect: () => value,
 	})
 
 export const createBuiltInObj = (
-	fn: (
-		...args: Obj[]
-	) => Effect.Effect<Obj, KennethParseError | ParseError | never, never>,
+	fn: 'len' | 'diff'
 ) =>
 	BuiltInObj({
 		fn,
-		inspect: () => 'builtin function',
 	})
 
 export const createIdentObj = (identExp: IdentExp) =>
 	IdentObj({
 		identExp,
-		inspect: () => identExp.value,
 	})
 
 export const createInfixObj = (
@@ -161,5 +140,4 @@ export const createInfixObj = (
 		left,
 		operator,
 		right,
-		inspect: () => 'infix obj',
 	})

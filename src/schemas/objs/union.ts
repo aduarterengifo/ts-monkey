@@ -23,6 +23,8 @@ import {
 	stringObjSchema,
 	type StringObj,
 } from './string'
+import { IdentObj, IdentObjEncoded, identObjSchema } from './ident'
+import { InfixObj, InfixObjEncoded, infixObjSchema } from './infix'
 
 export type Obj =
 	| BoolObj
@@ -33,6 +35,8 @@ export type Obj =
 	| NullObj
 	| ReturnObj
 	| StringObj
+	| IdentObj
+	| InfixObj
 
 export type ObjEncoded =
 	| BoolObjEncoded
@@ -43,6 +47,8 @@ export type ObjEncoded =
 	| NullObjEncoded
 	| ReturnObjEncoded
 	| StringObjEncoded
+	| IdentObjEncoded
+	| InfixObjEncoded
 
 export const objSchema = Schema.suspend(
 	(): Schema.Schema<Obj, ObjEncoded> =>
@@ -55,5 +61,7 @@ export const objSchema = Schema.suspend(
 			nullObjSchema,
 			returnObjSchema,
 			stringObjSchema,
+			identObjSchema,
+			infixObjSchema
 		),
 )

@@ -48,6 +48,7 @@ import { diffPolynomial, type PolynomialObj } from '../diff/obj'
 import { nativeToIntExp } from 'src/schemas/nodes/exps/int'
 import { InfixExp } from 'src/schemas/nodes/exps/infix'
 import { logDebug } from 'effect/Effect'
+import { builtInFnMap } from '../object/builtins'
 
 // TODO move diff to ENV!
 
@@ -162,7 +163,7 @@ export const applyFunction =
 	(fn: FunctionObj | BuiltInObj, ident: IdentExp | undefined) =>
 	(args: Obj[]) =>
 		Match.value(fn).pipe(
-			Match.tag('BuiltInObj', (fn) => fn.fn(...args)),
+			Match.tag('BuiltInObj', (fn) => builtInFnMap[fn.fn](...args)), // naming is a bit off
 			Match.tag('FunctionObj', (fn) =>
 				extendFunctionEnv(fn, args).pipe(
 					Effect.flatMap((env) => Eval(fn.body)(env, ident)),

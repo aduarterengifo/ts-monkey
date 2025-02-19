@@ -1,7 +1,7 @@
 import { Schema } from 'effect'
 
 const fields = {
-	fn: Schema.Unknown,
+	fn: Schema.Literal('len', 'diff'),
 }
 
 export interface BuiltInObj extends Schema.Struct.Type<typeof fields> {
