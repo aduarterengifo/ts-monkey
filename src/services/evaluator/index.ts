@@ -23,7 +23,7 @@ import {
 } from '../object'
 import { Effect, Match, Schema } from 'effect'
 import { Parser } from '../parser'
-import { createEnvironment, type Environment } from '../object/environment'
+import { createEnvironment, get, type Environment } from '../object/environment'
 import type { InfixOperator } from '../../schemas/infix-operator'
 import type { ParseError } from 'effect/ParseResult'
 import { KennethEvalError } from '../../errors/kenneth/eval'
@@ -198,7 +198,7 @@ export const evalExpressions = (
 	)
 
 export const evalIdentExpression = (ident: IdentExp, env: Environment) =>
-	env.get(ident.value).pipe(Effect.withSpan('eval.evalIdentExpression'))
+	get(env)(ident.value).pipe(Effect.withSpan('eval.evalIdentExpression'))
 
 export const evalIfExpression = (
 	ie: IfExp,

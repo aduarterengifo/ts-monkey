@@ -6,6 +6,20 @@ import type { ParseError } from 'effect/ParseResult'
 
 // this should also be a class/service
 
+export const get = (env: Environment) => (key: string) => Effect.gen(function* () {
+			return (
+				env.store.get(key) ??
+				(env.outer
+					? yield* env.outer.get(key)
+					: builtins[yield* Schema.decodeUnknown(builtinsKeySchema)(key)])
+			)
+		})
+
+export const set = (env: Environment) => (key: string, value: Obj) => {
+	env.store.set(key, value)
+	return value
+}
+
 export type Environment = {
 	store: Map<string, Obj>
 	outer: Environment | undefined
@@ -38,7 +52,7 @@ export const createEnvironment = (
 export const printStore = (env: Environment): string => {
 	let output = 'Environment Store:\n'
 	env.store.forEach((value, key) => {
-		output += `${key}: ${value.inspect()}\n`
+		output += `${key}: ${value}\n`
 	})
 
 	if (env.outer) {
