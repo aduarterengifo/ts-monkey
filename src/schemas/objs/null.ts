@@ -10,3 +10,5 @@ export interface NullObjEncoded  {
 
 export const nullObjSchema = Schema.TaggedStruct('NullObj', {
 })
+
+export const NULL = nullObjSchema.make()

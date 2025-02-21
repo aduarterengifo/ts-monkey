@@ -1,26 +1,25 @@
-import {
-	createIntegerObj,
-	FALSE,
-	type IntegerObj,
-	isIntegerObj,
-	nativeBoolToObjectBool,
-	NULL,
-	TRUE,
-	createReturnObj,
-	isReturnObj,
-	createFunctionObj,
-	type FunctionObj,
-	isFunctionObj,
-	createStringObj,
-	type BuiltInObj,
-	isBuiltInObj,
-	isStringObj,
-	type StringObj,
-	createIdentObj,
-	isIdentObj,
-	createInfixObj,
-	isInfixObj,
-} from '../object'
+// import {
+// 	createIntegerObj,
+// 	FALSE,
+// 	type IntegerObj,
+// 	isIntegerObj,
+// 	nativeBoolToObjectBool,
+// 	NULL,
+// 	TRUE,
+// 	createReturnObj,
+// 	isReturnObj,
+// 	createFunctionObj,
+// 	type FunctionObj,
+// 	isFunctionObj,
+// 	createStringObj,
+// 	type BuiltInObj,
+// 	isBuiltInObj,
+// 	isStringObj,
+// 	type StringObj,
+// 	createIdentObj,
+// 	isIdentObj,
+// 	isInfixObj,
+// } from '../object'
 import { Effect, Match, Schema } from 'effect'
 import { Parser } from '../parser'
 import { createEnvironment, get, set, type Environment } from '../object/environment'
@@ -36,7 +35,7 @@ import type { IfExp } from 'src/schemas/nodes/exps/if'
 import type { BlockStmt } from 'src/schemas/nodes/stmts/block'
 import type { Program } from 'src/schemas/nodes/program'
 import type { Token } from 'src/schemas/token/unions/all'
-import { isInfixExp, type Exp } from 'src/schemas/nodes/exps/union'
+import { type Exp } from 'src/schemas/nodes/exps/union'
 import type { Stmt } from 'src/schemas/nodes/stmts/union'
 import {
 	OPERATOR_TO_FUNCTION_MAP,
@@ -48,8 +47,15 @@ import { nativeToIntExp } from 'src/schemas/nodes/exps/int'
 import { InfixExp } from 'src/schemas/nodes/exps/infix'
 import { builtInFnMap } from '../object/builtins'
 import { infixObjSchema } from '@/schemas/objs/infix'
-import { Obj } from '@/schemas/objs/union'
+import { FALSE, isBuiltInObj, isFunctionObj, isIdentObj, isInfixObj, isIntegerObj, isReturnObj, isStringObj, nativeBoolToObjectBool, Obj, TRUE } from '@/schemas/objs/union'
 import { PolynomialObj } from '@/schemas/objs/unions/polynomial'
+import { identObjSchema } from '@/schemas/objs/ident'
+import { NULL } from '@/schemas/objs/null'
+import { returnObjSchema } from '@/schemas/objs/return'
+import { IntObj, intObjSchema } from '@/schemas/objs/int'
+import { FunctionObj, functionObjSchema } from '@/schemas/objs/function'
+import { StringObj, stringObjSchema } from '@/schemas/objs/string'
+import { BuiltInObj } from '@/schemas/objs/built-in'
 
 // TODO move diff to ENV!
 
@@ -59,7 +65,7 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 			evalProgram(statements, env).pipe(Effect.map(unwrapReturnvalue)),
 		IdentExp: (ident) =>
 			identExp && IdentExpEq(identExp, ident)
-				? Effect.succeed(createIdentObj(ident))
+				? Effect.succeed(identObjSchema.make({ identExp: ident }))
 				: evalIdentExpression(ident, env),
 		LetStmt: ({ value, name }) =>
 			Effect.gen(function* () {
@@ -68,9 +74,9 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 				return NULL
 			}),
 		ReturnStmt: ({ value }) =>
-			Eval(value)(env, identExp).pipe(Effect.map(createReturnObj)),
+			Eval(value)(env, identExp).pipe(Effect.map((value) => returnObjSchema.make({ value }))),
 		ExpStmt: ({ expression }) => Eval(expression)(env, identExp),
-		IntExp: ({ value }) => Effect.succeed(createIntegerObj(+value)),
+		IntExp: ({ value }) => Effect.succeed(intObjSchema.make({ value })),
 		PrefixExp: ({ operator, right }) =>
 			Effect.gen(function* () {
 				const r = yield* Eval(right)(env, identExp)
@@ -88,7 +94,7 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 		IfExp: (ie) => evalIfExpression(ie, env, identExp),
 		BlockStmt: (stmt) => evalBlockStatement(stmt, env, identExp),
 		FuncExp: ({ parameters, body }) =>
-			Effect.succeed(createFunctionObj(parameters, body, env)),
+			Effect.succeed(functionObjSchema.make({ params: parameters, body, env })),
 		CallExp: ({ fn, args }) =>
 			Effect.gen(function* () {
 				const fnEval = yield* Eval(fn)(env, identExp)
@@ -98,21 +104,21 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 					? applyFunction(fnEval, identExp)(argsEval)
 					: new KennethEvalError({ message: `not a function: ${fnEval._tag}` })
 			}),
-		StrExp: ({ value }) => Effect.succeed(createStringObj(value)),
+		StrExp: ({ value }) => Effect.succeed(stringObjSchema.make({ value })),
 		DiffExp: (diffExp) => evalDiff(diffExp)(env),
 	})
 
 export const Eval =
 	(node: KNode) =>
-	(
-		env: Environment,
-		identExp: IdentExp | undefined,
-	): Effect.Effect<
-		Obj,
-		KennethEvalError | ParseError | KennethParseError,
-		never
-	> =>
-		nodeEvalMatch(env, identExp)(node).pipe(Effect.withSpan('eval.Eval'))
+		(
+			env: Environment,
+			identExp: IdentExp | undefined,
+		): Effect.Effect<
+			Obj,
+			KennethEvalError | ParseError | KennethParseError,
+			never
+		> =>
+			nodeEvalMatch(env, identExp)(node).pipe(Effect.withSpan('eval.Eval'))
 
 export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 	Effect.gen(function* () {
@@ -162,19 +168,19 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 
 export const applyFunction =
 	(fn: FunctionObj | BuiltInObj, ident: IdentExp | undefined) =>
-	(args: Obj[]) =>
-		Match.value(fn).pipe(
-			Match.tag('BuiltInObj', (fn) => builtInFnMap[fn.fn](...args)), // naming is a bit off
-			// TODO Move env to a applicator, and keep just raw data in the function obj, which can be operated on by a function.
-			Match.tag('FunctionObj', (fn) =>
-				extendFunctionEnv(fn, args).pipe(
-					Effect.flatMap((env) => Eval(fn.body)(env, ident)),
-					Effect.map(unwrapReturnvalue),
+		(args: Obj[]) =>
+			Match.value(fn).pipe(
+				Match.tag('BuiltInObj', (fn) => builtInFnMap[fn.fn](...args)), // naming is a bit off
+				// TODO Move env to a applicator, and keep just raw data in the function obj, which can be operated on by a function.
+				Match.tag('FunctionObj', (fn) =>
+					extendFunctionEnv(fn, args).pipe(
+						Effect.flatMap((env) => Eval(fn.body)(env, ident)),
+						Effect.map(unwrapReturnvalue),
+					),
 				),
-			),
-			Match.exhaustive,
-			Effect.withSpan('eval.applyFunction'),
-		)
+				Match.exhaustive,
+				Effect.withSpan('eval.applyFunction'),
+			)
 
 export const extendFunctionEnv = (fn: FunctionObj, args: Obj[]) =>
 	Effect.gen(function* () {
@@ -186,7 +192,10 @@ export const extendFunctionEnv = (fn: FunctionObj, args: Obj[]) =>
 	}).pipe(Effect.withSpan('eval.extendFunctionEnv'))
 
 export const unwrapReturnvalue = (obj: Obj) =>
-	isReturnObj(obj) ? obj.value : obj
+	Match.value(obj).pipe(
+		Match.tag('ReturnObj', (returnObj) => returnObj.value),
+		Match.orElse(() => obj)
+	)
 
 export const evalExpressions = (
 	exps: readonly Exp[],
@@ -262,7 +271,7 @@ export const evalInfixExpression =
 				isInfixObj(left) ||
 				isInfixObj(right)
 			) {
-				return infixObjSchema.make({left, operator, right}) 
+				return infixObjSchema.make({ left, operator, right })
 			}
 			if (isIntegerObj(left) && isIntegerObj(right)) {
 				return evalIntegerInfixExpression(operator, left, right)
@@ -290,15 +299,15 @@ export const evalInfixExpression =
 const nativeToObj = (result: number | boolean | string) =>
 	Match.value(result).pipe(
 		Match.when(Match.boolean, (bool) => nativeBoolToObjectBool(bool)),
-		Match.when(Match.number, (num) => createIntegerObj(num)),
-		Match.when(Match.string, (str) => createStringObj(str)),
+		Match.when(Match.number, (num) => intObjSchema.make({ value: num })),
+		Match.when(Match.string, (str) => stringObjSchema.make({ value: str })),
 		Match.exhaustive,
 	)
 
 export const evalIntegerInfixExpression = (
 	operator: InfixOperator,
-	left: IntegerObj,
-	right: IntegerObj,
+	left: IntObj,
+	right: IntObj,
 ) => nativeToObj(OPERATOR_TO_FUNCTION_MAP[operator](left.value, right.value))
 
 export const evalStringInfixExpression = (
@@ -330,8 +339,8 @@ export const evalPrefixExpression =
 			Match.exhaustive,
 		)
 
-export const evalMinusPrefixOperatorExpression = (right: IntegerObj) =>
-	Effect.succeed(createIntegerObj(-right.value))
+export const evalMinusPrefixOperatorExpression = (right: IntObj) =>
+	Effect.succeed(intObjSchema.make({ value: -right.value }))
 
 export const evalBangOperatorExpression = (right: Obj) =>
 	Effect.succeed(
@@ -392,4 +401,4 @@ export class Evaluator extends Effect.Service<Evaluator>()('Evaluator', {
 		}
 	}),
 	dependencies: [Parser.Default],
-}) {}
+}) { }

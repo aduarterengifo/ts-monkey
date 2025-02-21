@@ -6,7 +6,7 @@ import { KennethParseError } from '../../errors/kenneth/parse'
 import { PolynomialObj, polynomialObjSchema } from '@/schemas/objs/unions/polynomial'
 import { IdentObj, identObjSchema } from '@/schemas/objs/ident'
 import { IntObj, intObjSchema } from '@/schemas/objs/int'
-import { InfixObj, infixObjSchema } from '@/schemas/objs/infix'
+import { infixObjSchema } from '@/schemas/objs/infix'
 import { polynomialOperatorSchema } from '@/schemas/polynomial-operator'
 
 export const newTerm = (coeff: number, x: IdentObj, power: number) =>
@@ -154,7 +154,7 @@ export const diffPolynomial = (
 												})
 											}), 
 											operator: TokenType.SLASH, 
-											right: 							infixObjSchema.make({
+											right: 	infixObjSchema.make({
 												left: right, 
 												operator: TokenType.EXPONENT, 
 												right: intObjSchema.make({value: 2})
@@ -169,15 +169,15 @@ export const diffPolynomial = (
 					),
 					Match.when(TokenType.EXPONENT, () => processTerm(obj, x)),
 					Match.when(TokenType.PLUS, () =>
-						Effect.gen(function* () {
+						Effect.gen(function*() {
 							return yield* Effect.succeed(
-								infixObjSchema.make({
-									left: yield* diffPolynomial(left, x), 
-									operator: TokenType.PLUS, 
-									right: yield* diffPolynomial(right, x)
-								})
-							)
-						}),
+							infixObjSchema.make({
+								left: yield* diffPolynomial(left, x), 
+								operator: TokenType.PLUS, 
+								right: yield* diffPolynomial(right, x)
+							})
+						)
+						})
 					),
 					Match.when(TokenType.MINUS, () =>
 						Effect.gen(function* () {
@@ -188,7 +188,7 @@ export const diffPolynomial = (
 									right: yield* diffPolynomial(right, x)
 								})
 							)
-						}),
+						})
 					),
 					Match.exhaustive,
 				)

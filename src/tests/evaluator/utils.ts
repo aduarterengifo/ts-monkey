@@ -1,8 +1,7 @@
+import { NULL } from '@/schemas/objs/null'
+import { Obj, prettyObj } from '@/schemas/objs/union'
 import { Effect, Match } from 'effect'
 import { KennethParseError } from 'src/errors/kenneth/parse'
-import { isErrorObj, NULL, type Obj } from 'src/services/object'
-
-// TODO: this seems quite redundant
 
 export const testIntegerObject = (obj: Obj, expected: number) =>
 	Match.value(obj).pipe(
@@ -62,23 +61,21 @@ export const testNullOject = (obj: Obj) =>
 	Effect.gen(function* () {
 		if (obj !== NULL) {
 			return yield* new KennethParseError({
-				message: `obj is not NULL. got ${obj.inspect()}`,
+				message: `obj is not NULL. got ${prettyObj(obj)}`,
 			})
 		}
 		return true
 	})
 
 export const testErrorObject = (obj: Obj, expected: string) =>
-	Effect.gen(function* () {
-		if (!isErrorObj(obj)) {
-			return yield* new KennethParseError({
-				message: `obj is not an ErrorObj. got ${JSON.stringify(obj)}`,
-			})
-		}
-		if (obj.message !== expected) {
-			return yield* new KennethParseError({
-				message: `expect obj.message to be ${expected}. got ${obj.message}`,
-			})
-		}
-		return true
-	})
+	Match.value(obj).pipe(
+		Match.tag('ErrorObj', (errObj) => Effect.if(errObj.message === expected, {
+			onTrue: () => Effect.succeed(true),
+			onFalse: () => Effect.fail(new KennethParseError({
+			message: `expect obj.message to be ${expected}. got ${errObj.message}`,
+		}))
+		})),
+		Match.orElse(() => Effect.fail(new  KennethParseError({
+			message: `obj is not an ErrorObj. got ${JSON.stringify(obj)}`,
+		})))
+	)

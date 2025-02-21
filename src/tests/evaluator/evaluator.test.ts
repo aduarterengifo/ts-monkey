@@ -20,13 +20,13 @@ import { testIdentifier } from '../parser/utils/test-identifier'
 import { testInfixExpression } from '../parser/utils/test-infix-expression'
 import { testLetStatement } from '../parser/statements/let'
 import type { Program } from 'src/schemas/nodes/program'
-import {
-	createErrorObj,
-	isErrorObj,
-	isFunctionObj,
-	isStringObj,
-	type Obj,
-} from 'src/services/object'
+// import {
+// 	createErrorObj,
+// 	isErrorObj,
+// 	isFunctionObj,
+// 	isStringObj,
+// 	type Obj,
+// } from 'src/services/object'
 import { Parser } from 'src/services/parser'
 import { Eval, Evaluator } from 'src/services/evaluator'
 import { createEnvironment } from 'src/services/object/environment'
@@ -37,7 +37,7 @@ import { LetStmt } from 'src/schemas/nodes/stmts/let'
 import { ReturnStmt } from 'src/schemas/nodes/stmts/return'
 import { CallExp } from 'src/schemas/nodes/exps/call'
 import { PrefixExp } from 'src/schemas/nodes/exps/prefix'
-import { logDebug } from 'effect/Effect'
+import { isErrorObj, isFunctionObj, isStringObj, Obj } from '@/schemas/objs/union'
 
 type TestSuite = {
 	description: string
@@ -686,7 +686,7 @@ describe('eval', () => {
 
 			const program = yield* parser.parseProgram
 			const env = createEnvironment()
-			const evaluated = yield* Eval(program)(env)
+			const evaluated = yield* Eval(program)(env, undefined)
 
 			expect(isStringObj(evaluated)).toBe(true)
 			if (isStringObj(evaluated)) {

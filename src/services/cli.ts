@@ -36,7 +36,7 @@ const replCommand = Command.make(
 				const parser = yield* Parser
 				yield* parser.init(input)
 				const program = yield* parser.parseProgram
-				const evaluation = yield* Eval(program)(env)
+				const evaluation = yield* Eval(program)(env, undefined)
 				yield* Console.log(Pretty.make(objSchema)(evaluation))
 			}
 		}),
