@@ -16,7 +16,6 @@ export class DiffExp extends Schema.TaggedClass<DiffExp>()('DiffExp', {
 	params: Schema.Array(
 		Schema.suspend((): Schema.Schema<IdentExp, IdentExpEncoded> => IdentExp),
 	),
-	// x: Schema.suspend((): Schema.Schema<IdentExp, IdentExpEncoded> => IdentExp),
 }) {
 	tokenLiteral() {
 		return this.token.literal

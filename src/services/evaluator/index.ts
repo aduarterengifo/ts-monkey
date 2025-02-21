@@ -23,7 +23,7 @@ import {
 } from '../object'
 import { Effect, Match, Schema } from 'effect'
 import { Parser } from '../parser'
-import { createEnvironment, get, type Environment } from '../object/environment'
+import { createEnvironment, get, set, type Environment } from '../object/environment'
 import type { InfixOperator } from '../../schemas/infix-operator'
 import type { ParseError } from 'effect/ParseResult'
 import { KennethEvalError } from '../../errors/kenneth/eval'
@@ -43,13 +43,13 @@ import {
 	STRING_OPERATOR_TO_FUNCTION_MAP,
 } from './constants'
 import type { DiffExp } from 'src/schemas/nodes/exps/diff'
-import { diffPolynomial, type PolynomialObj } from '../diff/obj'
+import { diffPolynomial } from '../diff/obj'
 import { nativeToIntExp } from 'src/schemas/nodes/exps/int'
 import { InfixExp } from 'src/schemas/nodes/exps/infix'
-import { logDebug } from 'effect/Effect'
 import { builtInFnMap } from '../object/builtins'
 import { infixObjSchema } from '@/schemas/objs/infix'
 import { Obj } from '@/schemas/objs/union'
+import { PolynomialObj } from '@/schemas/objs/unions/polynomial'
 
 // TODO move diff to ENV!
 
@@ -64,7 +64,7 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 		LetStmt: ({ value, name }) =>
 			Effect.gen(function* () {
 				const val = yield* Eval(value)(env, identExp)
-				env.set(name.value, val)
+				set(env)(name.value, val)
 				return NULL
 			}),
 		ReturnStmt: ({ value }) =>
@@ -180,7 +180,7 @@ export const extendFunctionEnv = (fn: FunctionObj, args: Obj[]) =>
 	Effect.gen(function* () {
 		const env = createEnvironment(fn.env)
 		for (let i = 0; i < fn.params.length; i++) {
-			env.set(fn.params[i].value, args[i])
+			set(env)(fn.params[i].value, args[i])
 		}
 		return yield* Effect.succeed(env)
 	}).pipe(Effect.withSpan('eval.extendFunctionEnv'))
