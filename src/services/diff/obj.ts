@@ -1,30 +1,29 @@
 import { Effect, Match, Schema } from 'effect'
-import {
-	createIntegerObj,
-	createInfixObj,
-	createIdentObj,
-} from '../object'
 import { expectIdentEquivalence, IdentExp } from '../../schemas/nodes/exps/ident'
 import { TokenType } from '../../schemas/token-types/union'
 import type { ParseError } from 'effect/ParseResult'
 import { KennethParseError } from '../../errors/kenneth/parse'
 import { PolynomialObj, polynomialObjSchema } from '@/schemas/objs/unions/polynomial'
-import { polynomialOperatorSchema } from '@/schemas/polynomial-operator'
 import { IdentObj, identObjSchema } from '@/schemas/objs/ident'
 import { IntObj, intObjSchema } from '@/schemas/objs/int'
-import { infixObjSchema } from '@/schemas/objs/infix'
+import { InfixObj, infixObjSchema } from '@/schemas/objs/infix'
+import { polynomialOperatorSchema } from '@/schemas/polynomial-operator'
 
 export const newTerm = (coeff: number, x: IdentObj, power: number) =>
-	createInfixObj(
-		createIntegerObj(coeff),
-		'*',
-		createInfixObj(x, '**', createIntegerObj(power)),
-	)
+	infixObjSchema.make({
+		left: intObjSchema.make({value: coeff}), 
+		operator: '*', 
+		right: infixObjSchema.make({
+			left: x, 
+			operator: '**', 
+			right: intObjSchema.make({value:power})
+		})
+	})
 
-const processTerm = (exp: PolynomialObj, x: IdentExp) =>
-	Match.value(exp).pipe(
-		Match.tag('IntegerObj', () => Effect.succeed(createIntegerObj(0))),
-		Match.tag('IdentObj', () => Effect.succeed(createIntegerObj(1))),
+const processTerm = (obj: PolynomialObj, x: IdentExp)  =>
+	Match.value(obj).pipe(
+		Match.tag('IntegerObj', () => Effect.succeed(intObjSchema.make({value: 0}))),
+		Match.tag('IdentObj', () => Effect.succeed(intObjSchema.make({value: 1}))),
 		Match.tag('InfixObj', ({ left, operator, right }) =>
 			Effect.gen(function* () {
 				const op = yield* Schema.decodeUnknown(
@@ -57,7 +56,7 @@ const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 
 											return newTerm(
 												coeff.value * power.value,
-												createIdentObj(x),
+												identObjSchema.make({identExp: x}),
 												power.value - 1,
 											)
 										}),
@@ -77,7 +76,7 @@ const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 							const { value } = right as IntObj
 
 							return yield* Effect.succeed(
-								newTerm(value, createIdentObj(x), value - 1),
+								newTerm(value, identObjSchema.make({identExp: x}), value - 1),
 							)
 						}),
 					),

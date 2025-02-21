@@ -27,14 +27,14 @@ export interface Environment {
 }
 
 export interface EnvironmentEncoded {
-  readonly outer: Environment | undefined
+  readonly outer: EnvironmentEncoded | undefined
   readonly store: Map<string, ObjEncoded>
 }
 
 
 export const environmentSchema = Schema.Struct({
 	store: Schema.suspend((): Schema.Schema<Map<string, Obj>, Map<string, ObjEncoded>> => Schema.Map({key: Schema.String, value: objSchema})),
-	outer: Schema.suspend((): Schema.Schema<Environment, EnvironmentEncoded> => environmentSchema)
+	outer: Schema.Union(Schema.suspend((): Schema.Schema<Environment, EnvironmentEncoded> => environmentSchema), Schema.Undefined)
 })
 
 // export type Environment = {
