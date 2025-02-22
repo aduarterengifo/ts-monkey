@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 
 const fields = {
-	vlue: Schema.String,
+	value: Schema.String,
 };
 
 export interface StringObj extends Schema.Struct.Type<typeof fields> {
