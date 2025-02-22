@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
-import type { Obj } from ".";
+import { type Obj, objInspect } from ".";
 import { builtins, builtinsKeySchema } from "./builtins";
 
 export const get =
@@ -35,7 +35,7 @@ export const createEnvironment = (
 export const printStore = (env: Environment): string => {
 	let output = "Environment Store:\n";
 	env.store.forEach((value, key) => {
-		output += `${key}: ${value.inspect()}\n`;
+		output += `${key}: ${objInspect(value)}\n`;
 	});
 
 	if (env.outer) {

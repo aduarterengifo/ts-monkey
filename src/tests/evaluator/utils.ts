@@ -1,12 +1,12 @@
-import { Effect, Match } from 'effect'
-import { KennethParseError } from 'src/errors/kenneth/parse'
-import { isErrorObj, NULL, type Obj } from 'src/services/object'
+import { Effect, Match } from "effect";
+import { KennethParseError } from "src/errors/kenneth/parse";
+import { NULL, type Obj, isErrorObj, objInspect } from "src/services/object";
 
 // TODO: this seems quite redundant
 
 export const testIntegerObject = (obj: Obj, expected: number) =>
 	Match.value(obj).pipe(
-		Match.tag('IntegerObj', (intObj) =>
+		Match.tag("IntegerObj", (intObj) =>
 			Effect.fail(
 				new KennethParseError({
 					message: `expect obj.value to be ${expected}. got ${intObj.value}`,
@@ -20,11 +20,11 @@ export const testIntegerObject = (obj: Obj, expected: number) =>
 				}),
 			),
 		),
-	)
+	);
 
 export const testStringObject = (obj: Obj, expected: string) =>
 	Match.value(obj).pipe(
-		Match.tag('StringObj', (stringObj) =>
+		Match.tag("StringObj", (stringObj) =>
 			Effect.fail(
 				new KennethParseError({
 					message: `expect obj.value to be ${expected}. got ${stringObj.value}`,
@@ -38,11 +38,11 @@ export const testStringObject = (obj: Obj, expected: string) =>
 				}),
 			),
 		),
-	)
+	);
 
 export const testBooleanObject = (obj: Obj, expected: boolean) =>
 	Match.value(obj).pipe(
-		Match.tag('BooleanObj', (booleanObj) =>
+		Match.tag("BooleanObj", (booleanObj) =>
 			Effect.fail(
 				new KennethParseError({
 					message: `expect obj.value to be ${expected}. got ${booleanObj.value}`,
@@ -56,29 +56,29 @@ export const testBooleanObject = (obj: Obj, expected: boolean) =>
 				}),
 			),
 		),
-	)
+	);
 
 export const testNullOject = (obj: Obj) =>
 	Effect.gen(function* () {
 		if (obj !== NULL) {
 			return yield* new KennethParseError({
-				message: `obj is not NULL. got ${obj.inspect()}`,
-			})
+				message: `obj is not NULL. got ${objInspect(obj)}`,
+			});
 		}
-		return true
-	})
+		return true;
+	});
 
 export const testErrorObject = (obj: Obj, expected: string) =>
 	Effect.gen(function* () {
 		if (!isErrorObj(obj)) {
 			return yield* new KennethParseError({
 				message: `obj is not an ErrorObj. got ${JSON.stringify(obj)}`,
-			})
+			});
 		}
 		if (obj.message !== expected) {
 			return yield* new KennethParseError({
 				message: `expect obj.message to be ${expected}. got ${obj.message}`,
-			})
+			});
 		}
-		return true
-	})
+		return true;
+	});
