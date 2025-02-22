@@ -38,17 +38,18 @@ import { ReturnStmt } from 'src/schemas/nodes/stmts/return'
 import { CallExp } from 'src/schemas/nodes/exps/call'
 import { PrefixExp } from 'src/schemas/nodes/exps/prefix'
 import { isErrorObj, isFunctionObj, isStringObj, Obj } from '@/schemas/objs/union'
+import { KennethParseError } from '@/errors/kenneth/parse'
 
 type TestSuite = {
 	description: string
 	tests: [input: string, expected: unknown][]
 	fn:
 		| ((
-				expected: unknown,
-		  ) => (program: Program) => Effect.Effect<unknown, never, never>)
+				expected: string | number,
+		  ) => (program: Program) => Effect.Effect<void, KennethParseError, never>)
 		| ((
-				expected: unknown,
-		  ) => (evaluated: Obj) => Effect.Effect<unknown, never, never>)
+				expected: string | number,
+		  ) => (evaluated: Obj) => Effect.Effect<void, KennethParseError, never>)
 }
 
 const testSuites: {
@@ -123,7 +124,7 @@ const testSuites: {
 				fn: (expected: string) => (program: Program) =>
 					Effect.gen(function* () {
 						const actual = program.string()
-						yield* Effect.succeed(expect(actual).toBe(expected))
+						expect(actual).toBe(expected)
 					}),
 			},
 			{
