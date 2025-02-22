@@ -1,4 +1,5 @@
 import { nodeString } from "@/schemas/nodes/union";
+import type { Obj } from "@/schemas/objs/union";
 import { Data, type Effect, Match } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import type { KennethParseError } from "src/errors/kenneth/parse";
@@ -6,37 +7,6 @@ import type { InfixOperator } from "src/schemas/infix-operator";
 import type { IdentExp } from "src/schemas/nodes/exps/ident";
 import type { BlockStmt } from "src/schemas/nodes/stmts/block";
 import type { Environment } from "./environment";
-
-export type Obj = Data.TaggedEnum<{
-	IntegerObj: {
-		readonly value: number;
-	};
-	BooleanObj: { readonly value: boolean };
-	NullObj: {};
-	ReturnObj: { readonly value: Obj };
-	ErrorObj: { readonly message: string };
-	FunctionObj: {
-		readonly params: readonly IdentExp[];
-		readonly body: BlockStmt;
-		readonly env: Environment;
-	};
-	StringObj: {
-		readonly value: string;
-	};
-	BuiltInObj: {
-		readonly fn: (
-			...args: Obj[]
-		) => Effect.Effect<Obj, KennethParseError | ParseError | never, never>;
-	};
-	IdentObj: {
-		readonly identExp: IdentExp;
-	};
-	InfixObj: {
-		readonly left: Obj;
-		readonly right: Obj;
-		readonly operator: InfixOperator;
-	};
-}>;
 
 export type IntegerObj = Extract<Obj, { _tag: "IntegerObj" }>;
 export type BooleanObj = Extract<Obj, { _tag: "BooleanObj" }>;

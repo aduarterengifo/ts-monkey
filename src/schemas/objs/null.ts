@@ -1,13 +1,5 @@
 import { Schema } from "effect";
 
-const fields = {
-	inpect: Schema.String,
-};
+export const NullObj = Schema.TaggedStruct("NullObj", {});
 
-export interface NullObj extends Schema.Struct.Type<typeof fields> {
-	readonly _tag: "NullObj";
-}
-
-export const NullObj = Schema.TaggedStruct("NullObj", {
-	...fields,
-});
+export type NullObj = typeof NullObj.Type;

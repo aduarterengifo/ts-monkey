@@ -1,6 +1,7 @@
+import type { Obj } from "@/schemas/objs/union";
 import { Effect, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
-import { type Obj, objInspect } from ".";
+import { objInspect } from ".";
 import { builtins, builtinsKeySchema } from "./builtins";
 
 export const get =

@@ -1,6 +1,7 @@
+import type { Obj } from "@/schemas/objs/union";
 import { Effect, Match } from "effect";
 import { KennethParseError } from "src/errors/kenneth/parse";
-import { NULL, type Obj, isErrorObj, objInspect } from "src/services/object";
+import { NULL, isErrorObj, objInspect } from "src/services/object";
 
 // TODO: this seems quite redundant
 
