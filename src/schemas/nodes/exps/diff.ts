@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import { type DiffToken, diffTokenSchema } from "src/schemas/token/diff";
 import { IdentExp } from "./ident";
-import { type Exp, expSchema } from "./union";
+import { Exp } from "./union";
 
 export type DiffExp = {
 	readonly _tag: "DiffExp";
@@ -12,6 +12,6 @@ export type DiffExp = {
 
 export const DiffExp = Schema.TaggedStruct("DiffExp", {
 	token: diffTokenSchema,
-	exp: Schema.suspend((): Schema.Schema<Exp> => expSchema),
+	exp: Schema.suspend((): Schema.Schema<Exp> => Exp),
 	params: Schema.Array(Schema.suspend((): Schema.Schema<IdentExp> => IdentExp)),
 });

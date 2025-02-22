@@ -6,7 +6,7 @@ import { ReturnStmt } from "./return";
 
 export type Stmt = BlockStmt | ExpStmt | LetStmt | ReturnStmt;
 
-export const stmtSchema = Schema.suspend(
+export const Stmt = Schema.suspend(
 	(): Schema.Schema<Stmt> =>
 		Schema.Union(BlockStmt, ExpStmt, LetStmt, ReturnStmt),
 );

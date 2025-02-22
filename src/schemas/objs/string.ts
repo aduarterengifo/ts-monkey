@@ -1,17 +1,13 @@
-import { Schema } from 'effect'
+import { Schema } from "effect";
 
 const fields = {
 	vlue: Schema.String,
-}
+};
 
 export interface StringObj extends Schema.Struct.Type<typeof fields> {
-	readonly _tag: 'StringObj'
+	readonly _tag: "StringObj";
 }
 
-export interface StringObjEncoded extends Schema.Struct.Type<typeof fields> {
-	readonly _tag: 'StringObj'
-}
-
-export const stringObjSchema = Schema.TaggedStruct('StringObj', {
+export const StringObj = Schema.TaggedStruct("StringObj", {
 	...fields,
-})
+});

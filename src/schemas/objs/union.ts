@@ -1,59 +1,33 @@
-import { Schema } from 'effect'
-import { type BoolObjEncoded, boolObjSchema, type BoolObj } from './bool'
-import {
-	type BuiltInObjEncoded,
-	builtInObjSchema,
-	type BuiltInObj,
-} from './built-in'
-import { type ErrorObjEncoded, errorObjSchema, type ErrorObj } from './error'
-import {
-	type FunctionObjEncoded,
-	functionObjSchema,
-	type FunctionObj,
-} from './function'
-import { type IntObjEncoded, intObjSchema, type IntObj } from './int'
-import { type NullObjEncoded, nullObjSchema, type NullObj } from './null'
-import {
-	returnObjSchema,
-	type ReturnObj,
-	type ReturnObjEncoded,
-} from './return'
-import {
-	type StringObjEncoded,
-	stringObjSchema,
-	type StringObj,
-} from './string'
+import { Schema } from "effect";
+import { BooleanObj } from "./bool";
+import { BuiltInObj } from "./built-in";
+import { ErrorObj } from "./error";
+import { FunctionObj } from "./function";
+import { IntegerObj } from "./int";
+import { NullObj } from "./null";
+import { ReturnObj } from "./return";
+import { StringObj } from "./string";
 
 export type Obj =
-	| BoolObj
+	| BooleanObj
 	| BuiltInObj
 	| ErrorObj
 	| FunctionObj
-	| IntObj
+	| IntegerObj
 	| NullObj
 	| ReturnObj
-	| StringObj
+	| StringObj;
 
-export type ObjEncoded =
-	| BoolObjEncoded
-	| BuiltInObjEncoded
-	| ErrorObjEncoded
-	| FunctionObjEncoded
-	| IntObjEncoded
-	| NullObjEncoded
-	| ReturnObjEncoded
-	| StringObjEncoded
-
-export const objSchema = Schema.suspend(
-	(): Schema.Schema<Obj, ObjEncoded> =>
+export const Obj = Schema.suspend(
+	(): Schema.Schema<Obj> =>
 		Schema.Union(
-			boolObjSchema,
-			builtInObjSchema,
-			errorObjSchema,
-			functionObjSchema,
-			intObjSchema,
-			nullObjSchema,
-			returnObjSchema,
-			stringObjSchema,
+			BooleanObj,
+			BuiltInObj,
+			ErrorObj,
+			FunctionObj,
+			IntegerObj,
+			NullObj,
+			ReturnObj,
+			StringObj,
 		),
-)
+);

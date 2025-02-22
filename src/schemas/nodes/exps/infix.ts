@@ -4,7 +4,7 @@ import {
 	infixOperatorSchema,
 } from "src/schemas/infix-operator";
 import { type Token, tokenSchema } from "src/schemas/token/unions/all";
-import { type Exp, expSchema } from "./union";
+import { Exp } from "./union";
 
 export type InfixExp = {
 	readonly _tag: "InfixExp";
@@ -17,8 +17,8 @@ export type InfixExp = {
 export const InfixExp = Schema.TaggedStruct("InfixExp", {
 	token: tokenSchema,
 	operator: infixOperatorSchema,
-	left: Schema.suspend((): Schema.Schema<Exp> => expSchema),
-	right: Schema.suspend((): Schema.Schema<Exp> => expSchema),
+	left: Schema.suspend((): Schema.Schema<Exp> => Exp),
+	right: Schema.suspend((): Schema.Schema<Exp> => Exp),
 });
 
 export const OpInfixExp = (op: InfixOperator) => (left: Exp, right: Exp) =>

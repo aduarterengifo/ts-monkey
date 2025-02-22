@@ -1,17 +1,13 @@
-import { Schema } from 'effect'
+import { Schema } from "effect";
 
 const fields = {
 	value: Schema.Boolean,
+};
+
+export interface BooleanObj extends Schema.Struct.Type<typeof fields> {
+	readonly _tag: "BooleanObj";
 }
 
-export interface BoolObj extends Schema.Struct.Type<typeof fields> {
-	readonly _tag: 'BoolObj'
-}
-
-export interface BoolObjEncoded extends Schema.Struct.Type<typeof fields> {
-	readonly _tag: 'BoolObj'
-}
-
-export const boolObjSchema = Schema.TaggedStruct('BoolObj', {
+export const BooleanObj = Schema.TaggedStruct("BooleanObj", {
 	...fields,
-})
+});
