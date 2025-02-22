@@ -1,7 +1,7 @@
 import { Effect } from 'effect'
 import { runPromiseInDefault } from '../runtimes/default'
 import { Evaluator } from '../services/evaluator'
-import { createErrorObj } from '@/services/object'
+import { errorObjSchema } from '@/schemas/objs/error'
 
 const runAndInterpretProgram = (input: string) =>
 	Effect.gen(function* () {
@@ -12,5 +12,5 @@ const runAndInterpretProgram = (input: string) =>
 export const runAndInterpret = (input: string) =>
 	runPromiseInDefault(runAndInterpretProgram(input).pipe(
 						Effect.catchAll((error) => {
-							return Effect.succeed(createErrorObj(error.message))
+							return Effect.succeed(errorObjSchema.make({message: error.message}))
 						})))

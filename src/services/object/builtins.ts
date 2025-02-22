@@ -1,16 +1,14 @@
 import { Effect, Match, Schema } from 'effect'
-import {
-	createBuiltInObj,
-	createErrorObj,
-	createFunctionObj,
-	createIntegerObj,
-	type Obj,
-} from '.'
 import { IdentExp } from 'src/schemas/nodes/exps/ident'
 import { BlockStmt } from 'src/schemas/nodes/stmts/block'
 import { DiffExp } from 'src/schemas/nodes/exps/diff'
-import type { Environment } from './environment'
+import { environmentSchema } from './environment'
 import { ExpStmt } from 'src/schemas/nodes/stmts/exp'
+import { Obj } from '@/schemas/objs/union'
+import { builtInObjSchema } from '@/schemas/objs/built-in'
+import { errorObjSchema } from '@/schemas/objs/error'
+import { intObjSchema } from '@/schemas/objs/int'
+import { functionObjSchema } from '@/schemas/objs/function'
 
 const diff2 = (...args: Obj[]) =>
 	Effect.gen(function* () {
@@ -24,7 +22,7 @@ const diff2 = (...args: Obj[]) =>
 				Schema.Struct({
 					params: Schema.Tuple(IdentExp),
 					body: BlockStmt,
-					env: Schema.Unknown,
+					env: environmentSchema,
 				}),
 			),
 		)(args))[0]
@@ -50,17 +48,20 @@ const diff2 = (...args: Obj[]) =>
 			],
 		})
 
-		return createFunctionObj(params, newBody, env as Environment)
+		return functionObjSchema.make({params, body: newBody, env})
 	})
 
 export const builtins = {
-	len: createBuiltInObj((...args: Obj[]) =>
+	len: builtInObjSchema.make({fn: 'len'}),
+	diff: builtInObjSchema.make({fn: 'diff'}),
+} as const
+
+export const builtInFnMap = {
+	len: (...args: Obj[]) =>
 		Effect.gen(function* () {
 			if (args.length !== 1) {
 				return yield* Effect.succeed(
-					createErrorObj(
-						`wrong number of arguments. got=${args.length}, want=1`,
-					),
+					errorObjSchema.make({message: `wrong number of arguments. got=${args.length}, want=1`})
 				)
 			}
 
@@ -68,19 +69,16 @@ export const builtins = {
 
 			return yield* Match.value(firstArg).pipe(
 				Match.tag('StringObj', (strObj) =>
-					Effect.succeed(createIntegerObj(strObj.value.length)),
+					Effect.succeed(intObjSchema.make({value: strObj.value.length })),
 				),
 				Match.orElse(() =>
 					Effect.succeed(
-						createErrorObj(
-							`argument to "len" not supported, got ${firstArg._tag}`,
-						),
+						errorObjSchema.make({message: `argument to "len" not supported, got ${firstArg._tag}` })
 					),
 				),
 			)
 		}),
-	),
-	diff: createBuiltInObj(diff2),
+	diff: diff2
 } as const
 
 const builtinKeys = Object.keys(builtins) as (keyof typeof builtins)[] // hack

@@ -1,17 +1,14 @@
 import { Schema } from 'effect'
 
-const fields = {
-	inpect: Schema.String,
-}
-
-export interface NullObj extends Schema.Struct.Type<typeof fields> {
+export interface NullObj {
 	readonly _tag: 'NullObj'
 }
 
-export interface NullObjEncoded extends Schema.Struct.Type<typeof fields> {
+export interface NullObjEncoded  {
 	readonly _tag: 'NullObj'
 }
 
 export const nullObjSchema = Schema.TaggedStruct('NullObj', {
-	...fields,
 })
+
+export const NULL = nullObjSchema.make()

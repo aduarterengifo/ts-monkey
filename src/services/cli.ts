@@ -2,11 +2,12 @@
 import { Args, Command } from '@effect/cli'
 import { Terminal } from '@effect/platform'
 import { BunContext, BunRuntime } from '@effect/platform-bun'
-import { Console, Effect, Layer } from 'effect'
+import { Console, Effect, Layer, Pretty } from 'effect'
 import { PROMPT } from './repl/constants'
 import { Parser } from './parser'
 import { Eval } from './evaluator'
 import { createEnvironment } from './object/environment'
+import { objSchema } from '@/schemas/objs/union'
 
 // Define the top-level command
 const topLevel = Command.make('hello-world', {}, () =>
@@ -35,8 +36,8 @@ const replCommand = Command.make(
 				const parser = yield* Parser
 				yield* parser.init(input)
 				const program = yield* parser.parseProgram
-				const evaluation = yield* Eval(program)(env)
-				yield* Console.log(evaluation.inspect())
+				const evaluation = yield* Eval(program)(env, undefined)
+				yield* Console.log(Pretty.make(objSchema)(evaluation))
 			}
 		}),
 	// Console.log(input),

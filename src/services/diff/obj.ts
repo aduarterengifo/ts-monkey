@@ -1,46 +1,38 @@
 import { Effect, Match, Schema } from 'effect'
-import {
-	createFunctionObj,
-	type IntegerObj,
-	type IdentObj,
-	type InfixObj,
-	type Obj,
-	createIntegerObj,
-	createInfixObj,
-	createIdentObj,
-} from '../object'
-import { IdentExp } from '../../schemas/nodes/exps/ident'
-import { BlockStmt } from '../../schemas/nodes/stmts/block'
-import { ExpStmt } from '../../schemas/nodes/stmts/exp'
-import { polynomialExpSchema } from '../../schemas/nodes/exps/unions/int-ident-infix'
+import { expectIdentEquivalence, IdentExp } from '../../schemas/nodes/exps/ident'
 import { TokenType } from '../../schemas/token-types/union'
 import type { ParseError } from 'effect/ParseResult'
 import { KennethParseError } from '../../errors/kenneth/parse'
-import type { Environment } from '../object/environment'
-import { FuncExp } from '../../schemas/nodes/exps/function'
-
-export type PolynomialObj = IntegerObj | IdentObj | InfixObj
+import { PolynomialObj, polynomialObjSchema } from '@/schemas/objs/unions/polynomial'
+import { IdentObj, identObjSchema } from '@/schemas/objs/ident'
+import { IntObj, intObjSchema } from '@/schemas/objs/int'
+import { infixObjSchema } from '@/schemas/objs/infix'
+import { polynomialOperatorSchema } from '@/schemas/polynomial-operator'
 
 export const newTerm = (coeff: number, x: IdentObj, power: number) =>
-	createInfixObj(
-		createIntegerObj(coeff),
-		'*',
-		createInfixObj(x, '**', createIntegerObj(power)),
-	)
+	infixObjSchema.make({
+		left: intObjSchema.make({value: coeff}), 
+		operator: '*', 
+		right: infixObjSchema.make({
+			left: x, 
+			operator: '**', 
+			right: intObjSchema.make({value:power})
+		})
+	})
 
-const processTerm = (exp: PolynomialObj, x: IdentExp) =>
-	Match.value(exp).pipe(
-		Match.tag('IntegerObj', () => Effect.succeed(createIntegerObj(0))),
-		Match.tag('IdentObj', () => Effect.succeed(createIntegerObj(1))),
+const processTerm = (obj: PolynomialObj, x: IdentExp)  =>
+	Match.value(obj).pipe(
+		Match.tag('IntegerObj', () => Effect.succeed(intObjSchema.make({value: 0}))),
+		Match.tag('IdentObj', () => Effect.succeed(intObjSchema.make({value: 1}))),
 		Match.tag('InfixObj', ({ left, operator, right }) =>
 			Effect.gen(function* () {
 				const op = yield* Schema.decodeUnknown(
 					Schema.Literal(TokenType.ASTERISK, TokenType.EXPONENT),
 				)(operator)
 				return yield* Match.value(op).pipe(
-					Match.when('*', () =>
+					Match.when(TokenType.ASTERISK, () =>
 						Effect.gen(function* () {
-							const coeff = left as IntegerObj
+							const coeff = yield* Schema.decodeUnknown(intObjSchema)(left)
 
 							return yield* Match.value(right).pipe(
 								Match.tag('IdentObj', (identExp) =>
@@ -59,16 +51,12 @@ const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 											yield* Schema.decodeUnknown(Schema.Literal('**'))(
 												secondOperator,
 											)
-											//const secondLeftParsed = secondLeft as IdentObj
+											
+											const power = yield* Schema.decodeUnknown(intObjSchema)(secondRight)
 
-											// yield* expectIdentEquivalence(secondLeftParsed, x)
-
-											const power = secondRight as IntegerObj
-
-											// TODO: FIX STUPID NUMBER VALUE
 											return newTerm(
 												coeff.value * power.value,
-												createIdentObj(x),
+												identObjSchema.make({identExp: x}),
 												power.value - 1,
 											)
 										}),
@@ -79,16 +67,16 @@ const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 							)
 						}),
 					),
-					Match.when('**', () =>
+					Match.when(TokenType.EXPONENT, () =>
 						Effect.gen(function* () {
-							//const identExp = left as IdentObj
+							const {identExp} = yield* Schema.decodeUnknown(identObjSchema)(left) 
 
-							// yield* expectIdentEquivalence(identExp, x)
+							yield* expectIdentEquivalence(identExp, x)
 
-							const { value } = right as IntegerObj
+							const { value } = right as IntObj
 
 							return yield* Effect.succeed(
-								newTerm(value, createIdentObj(x), value - 1),
+								newTerm(value, identObjSchema.make({identExp: x}), value - 1),
 							)
 						}),
 					),
@@ -108,36 +96,34 @@ export const diffPolynomial = (
 		Match.tag('IdentObj', () => processTerm(obj, x)), // leaf
 		Match.tag('InfixObj', (infixObj) =>
 			Effect.gen(function* () {
-				const left = infixObj.left as PolynomialObj
+				const left = yield* Schema.decodeUnknown(polynomialObjSchema)(infixObj.left)
 
-				const right = infixObj.right as PolynomialObj
+				const right = yield* Schema.decodeUnknown(polynomialObjSchema)(infixObj.right)
 
-				const operator = yield* Schema.decodeUnknown(
-					Schema.Literal('+', '*', '/', '**'),
-				)(infixObj.operator)
+				const operator = yield* Schema.decodeUnknown(polynomialOperatorSchema)(infixObj.operator)
 
 				return yield* Match.value(operator).pipe(
-					Match.when('*', () =>
+					Match.when(TokenType.ASTERISK, () =>
 						Match.value(obj).pipe(
 							Match.tag('InfixObj', () =>
 								Effect.gen(function* () {
 									if (
-										(left._tag === 'InfixObj' && left.operator === '+') ||
-										(right._tag === 'InfixObj' && right.operator === '+')
+										(left._tag === 'InfixObj' && left.operator === TokenType.PLUS) ||
+										(right._tag === 'InfixObj' && right.operator === TokenType.PLUS)
 									) {
-										return createInfixObj(
-											createInfixObj(
-												yield* diffPolynomial(left, x),
-												'*',
-												right,
-											),
-											'+',
-											createInfixObj(
-												left,
-												'*',
-												yield* diffPolynomial(right, x),
-											),
-										)
+										return infixObjSchema.make({
+											left: infixObjSchema.make({
+												left: yield* diffPolynomial(left, x), 
+												operator: TokenType.ASTERISK,
+												right
+											}),
+											operator: TokenType.PLUS,
+											right: infixObjSchema.make({
+												left, 
+												operator: TokenType.ASTERISK,
+												right: yield* diffPolynomial(right, x)
+											})
+										})
 									}
 									return yield* processTerm(obj, x) // leaf
 								}),
@@ -145,31 +131,35 @@ export const diffPolynomial = (
 							Match.orElse(() => processTerm(obj, x)), // leaf
 						),
 					),
-					Match.when('/', () =>
+					Match.when(TokenType.SLASH, () =>
 						Match.value(obj).pipe(
 							Match.tag('InfixObj', () =>
 								Effect.gen(function* () {
 									if (
-										(left._tag === 'InfixObj' && left.operator === '+') ||
-										(right._tag === 'InfixObj' && right.operator === '+')
+										(left._tag === 'InfixObj' && left.operator === TokenType.PLUS) ||
+										(right._tag === 'InfixObj' && right.operator === TokenType.PLUS)
 									) {
-										return createInfixObj(
-											createInfixObj(
-												createInfixObj(
-													yield* diffPolynomial(left, x),
-													'*',
-													right,
-												),
-												'-',
-												createInfixObj(
-													left,
-													'*',
-													yield* diffPolynomial(right, x),
-												),
-											),
-											'/',
-											createInfixObj(right, '**', createIntegerObj(2)),
-										)
+										return infixObjSchema.make({
+											left: infixObjSchema.make({
+												left: infixObjSchema.make({
+													left: yield* diffPolynomial(left, x), 
+													operator: TokenType.ASTERISK, 
+													right
+												}),
+												operator: TokenType.MINUS, 
+												right: infixObjSchema.make({
+													left, 
+													operator: TokenType.ASTERISK, 
+													right: yield* diffPolynomial(right, x)
+												})
+											}), 
+											operator: TokenType.SLASH, 
+											right: 	infixObjSchema.make({
+												left: right, 
+												operator: TokenType.EXPONENT, 
+												right: intObjSchema.make({value: 2})
+											})
+										})
 									}
 									return yield* processTerm(obj, x) // leaf
 								}),
@@ -177,17 +167,28 @@ export const diffPolynomial = (
 							Match.orElse(() => processTerm(obj, x)), // leaf
 						),
 					),
-					Match.when('**', () => processTerm(obj, x)),
-					Match.when('+', () =>
+					Match.when(TokenType.EXPONENT, () => processTerm(obj, x)),
+					Match.when(TokenType.PLUS, () =>
+						Effect.gen(function*() {
+							return yield* Effect.succeed(
+							infixObjSchema.make({
+								left: yield* diffPolynomial(left, x), 
+								operator: TokenType.PLUS, 
+								right: yield* diffPolynomial(right, x)
+							})
+						)
+						})
+					),
+					Match.when(TokenType.MINUS, () =>
 						Effect.gen(function* () {
 							return yield* Effect.succeed(
-								createInfixObj(
-									yield* diffPolynomial(left, x),
-									'+',
-									yield* diffPolynomial(right, x),
-								),
+								infixObjSchema.make({
+									left: yield* diffPolynomial(left, x), 
+									operator: TokenType.PLUS, 
+									right: yield* diffPolynomial(right, x)
+								})
 							)
-						}),
+						})
 					),
 					Match.exhaustive,
 				)
@@ -195,73 +196,3 @@ export const diffPolynomial = (
 		),
 		Match.exhaustive,
 	)
-
-export const diff = (...args: Obj[]) =>
-	Effect.gen(function* () {
-		// A single argument of type function with a single ident argument.
-		// counter factually I can also accept a fn(fn: (x: number) -> number) | fn(x: number) later is status quo.
-		// either way the fact remains that args should be a single function.
-		const {
-			params,
-			body: { token, statements },
-			env,
-		} = (yield* Schema.decodeUnknown(
-			Schema.Tuple(
-				Schema.Struct({
-					params: Schema.Tuple(Schema.Union(IdentExp, FuncExp)),
-					body: BlockStmt,
-					env: Schema.Unknown,
-				}),
-			),
-		)(args))[0]
-
-		const { token: expStmtToken, expression } = (yield* Schema.decodeUnknown(
-			Schema.Tuple(ExpStmt),
-		)(statements))[0]
-
-		const exp = yield* Schema.decodeUnknown(polynomialExpSchema)(expression)
-
-		return yield* Match.value(params[0]).pipe(
-			Match.tag('IdentExp', (x) =>
-				Effect.gen(function* () {
-					return createFunctionObj(
-						params as unknown as IdentExp[], // TODO: HACK
-						new BlockStmt({
-							token,
-							statements: [
-								new ExpStmt({
-									token: expStmtToken,
-									expression: yield* diffPolynomial(exp, x),
-								}),
-							],
-						}),
-						env as Environment,
-					)
-				}),
-			),
-			Match.tag('FuncExp', (g) =>
-				Effect.gen(function* () {
-					const { parameters: gParams } = g
-					const x = (yield* Schema.decodeUnknown(Schema.Tuple(IdentExp))(
-						gParams,
-					))[0]
-					return createFunctionObj(
-						params as unknown as IdentExp[], // TODO: HACK
-						new BlockStmt({
-							token,
-							statements: [
-								new ExpStmt({
-									token: expStmtToken,
-									expression: yield* diffPolynomial(exp, x),
-								}),
-							],
-						}),
-						env as Environment,
-					)
-
-					// chain rule
-				}),
-			),
-			Match.exhaustive,
-		)
-	})

@@ -20,13 +20,13 @@ import { testIdentifier } from '../parser/utils/test-identifier'
 import { testInfixExpression } from '../parser/utils/test-infix-expression'
 import { testLetStatement } from '../parser/statements/let'
 import type { Program } from 'src/schemas/nodes/program'
-import {
-	createErrorObj,
-	isErrorObj,
-	isFunctionObj,
-	isStringObj,
-	type Obj,
-} from 'src/services/object'
+// import {
+// 	createErrorObj,
+// 	isErrorObj,
+// 	isFunctionObj,
+// 	isStringObj,
+// 	type Obj,
+// } from 'src/services/object'
 import { Parser } from 'src/services/parser'
 import { Eval, Evaluator } from 'src/services/evaluator'
 import { createEnvironment } from 'src/services/object/environment'
@@ -37,18 +37,20 @@ import { LetStmt } from 'src/schemas/nodes/stmts/let'
 import { ReturnStmt } from 'src/schemas/nodes/stmts/return'
 import { CallExp } from 'src/schemas/nodes/exps/call'
 import { PrefixExp } from 'src/schemas/nodes/exps/prefix'
-import { logDebug } from 'effect/Effect'
+import { isErrorObj, isFunctionObj, isStringObj, Obj } from '@/schemas/objs/union'
+import { KennethParseError } from '@/errors/kenneth/parse'
+import { errorObjSchema } from '@/schemas/objs/error'
 
 type TestSuite = {
 	description: string
 	tests: [input: string, expected: unknown][]
 	fn:
 		| ((
-				expected: unknown,
-		  ) => (program: Program) => Effect.Effect<unknown, never, never>)
+				expected: string | number,
+		  ) => (program: Program) => Effect.Effect<void, KennethParseError, never>)
 		| ((
-				expected: unknown,
-		  ) => (evaluated: Obj) => Effect.Effect<unknown, never, never>)
+				expected: string | number,
+		  ) => (evaluated: Obj) => Effect.Effect<void, KennethParseError, never>)
 }
 
 const testSuites: {
@@ -123,7 +125,7 @@ const testSuites: {
 				fn: (expected: string) => (program: Program) =>
 					Effect.gen(function* () {
 						const actual = program.string()
-						yield* Effect.succeed(expect(actual).toBe(expected))
+						expect(actual).toBe(expected)
 					}),
 			},
 			{
@@ -607,12 +609,12 @@ for (const { name, kind, suite } of testSuites) {
 						Effect.catchAll((error) => {
 							console.log('error', error)
 							if (error._tag === 'KennethEvalError') {
-								return Effect.succeed(createErrorObj(error.message)).pipe(
+								return Effect.succeed(errorObjSchema.make({message: error.message})).pipe(
 									Effect.tap(Effect.logDebug('blew up')),
 								)
 							}
 							if (error._tag === 'ParseError') {
-								return Effect.succeed(createErrorObj(error.message))
+								return Effect.succeed(errorObjSchema.make({message: error.message}))
 							}
 
 							return expect(true).toBe(false)
@@ -686,7 +688,7 @@ describe('eval', () => {
 
 			const program = yield* parser.parseProgram
 			const env = createEnvironment()
-			const evaluated = yield* Eval(program)(env)
+			const evaluated = yield* Eval(program)(env, undefined)
 
 			expect(isStringObj(evaluated)).toBe(true)
 			if (isStringObj(evaluated)) {

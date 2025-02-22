@@ -46,8 +46,6 @@ import { TokenType } from 'src/schemas/token-types/union'
 import type { Token } from 'src/schemas/token/unions/all'
 import type { Exp } from 'src/schemas/nodes/exps/union'
 import { constantFoldingOverStmt } from './constant-folding'
-import type { DiffToken } from 'src/schemas/token/diff'
-import { DiffExp } from 'src/schemas/nodes/exps/diff'
 
 export class Parser extends Effect.Service<Parser>()('Parser', {
 	effect: Effect.gen(function* () {
@@ -210,18 +208,6 @@ export class Parser extends Effect.Service<Parser>()('Parser', {
 					token: curToken,
 					parameters,
 					body: yield* parseBlockStatement,
-				})
-			})
-
-		const parseDiff = (curToken: DiffToken) =>
-			Effect.gen(function* () {
-				yield* expectPeek(TokenType.LPAREN)
-				const fn = yield* parseFunctionParameters
-				yield* expectPeek(TokenType.LBRACE)
-
-				return new DiffExp({
-					token: curToken,
-					fn,
 				})
 			})
 
