@@ -330,7 +330,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 
 		const parseCallExpression = (fn: Exp) =>
 			Effect.gen(function* () {
-				return new CallExp({
+				return CallExp.make({
 					token: yield* getCurToken,
 					fn,
 					args: yield* parseCallArguments,
