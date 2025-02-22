@@ -1,15 +1,13 @@
+import { BuiltInObj } from "@/schemas/objs/built-in";
+import { ErrorObj } from "@/schemas/objs/error";
+import { FunctionObj } from "@/schemas/objs/function";
+import { IntegerObj } from "@/schemas/objs/int";
+import type { Obj } from "@/schemas/objs/union";
 import { Effect, Match, Schema } from "effect";
 import { DiffExp } from "src/schemas/nodes/exps/diff";
 import { IdentExp } from "src/schemas/nodes/exps/ident";
 import { BlockStmt } from "src/schemas/nodes/stmts/block";
 import { ExpStmt } from "src/schemas/nodes/stmts/exp";
-import {
-	type Obj,
-	createBuiltInObj,
-	createErrorObj,
-	createFunctionObj,
-	createIntegerObj,
-} from ".";
 import type { Environment } from "./environment";
 
 const diff2 = (...args: Obj[]) =>
@@ -50,37 +48,38 @@ const diff2 = (...args: Obj[]) =>
 			],
 		});
 
-		return createFunctionObj(params, newBody, env as Environment);
+		return FunctionObj.make({ params, body: newBody, env: env as Environment });
 	});
 
 export const builtins = {
-	len: createBuiltInObj((...args: Obj[]) =>
-		Effect.gen(function* () {
-			if (args.length !== 1) {
-				return yield* Effect.succeed(
-					createErrorObj(
-						`wrong number of arguments. got=${args.length}, want=1`,
+	len: BuiltInObj.make({
+		fn: (...args: Obj[]) =>
+			Effect.gen(function* () {
+				if (args.length !== 1) {
+					return yield* Effect.succeed(
+						ErrorObj.make({
+							message: `wrong number of arguments. got=${args.length}, want=1`,
+						}),
+					);
+				}
+
+				const firstArg = args[0];
+
+				return yield* Match.value(firstArg).pipe(
+					Match.tag("StringObj", (strObj) =>
+						Effect.succeed(IntegerObj.make({ value: strObj.value.length })),
 					),
-				);
-			}
-
-			const firstArg = args[0];
-
-			return yield* Match.value(firstArg).pipe(
-				Match.tag("StringObj", (strObj) =>
-					Effect.succeed(createIntegerObj(strObj.value.length)),
-				),
-				Match.orElse(() =>
-					Effect.succeed(
-						createErrorObj(
-							`argument to "len" not supported, got ${firstArg._tag}`,
+					Match.orElse(() =>
+						Effect.succeed(
+							ErrorObj.make({
+								message: `argument to "len" not supported, got ${firstArg._tag}`,
+							}),
 						),
 					),
-				),
-			);
-		}),
-	),
-	diff: createBuiltInObj(diff2),
+				);
+			}),
+	}),
+	diff: BuiltInObj.make({ fn: diff2 }),
 } as const;
 
 const builtinKeys = Object.keys(builtins) as (keyof typeof builtins)[]; // hack

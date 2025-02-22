@@ -1,22 +1,6 @@
 import { nodeString } from "@/schemas/nodes/union";
-import { BooleanObj } from "@/schemas/objs/bool";
-import { BuiltInObj } from "@/schemas/objs/built-in";
-import { ErrorObj } from "@/schemas/objs/error";
-import { FunctionObj } from "@/schemas/objs/function";
-import { IdentObj } from "@/schemas/objs/ident";
-import { InfixObj } from "@/schemas/objs/infix";
-import { IntegerObj } from "@/schemas/objs/int";
-import { NullObj } from "@/schemas/objs/null";
-import { ReturnObj } from "@/schemas/objs/return";
-import { StringObj } from "@/schemas/objs/string";
 import type { Obj } from "@/schemas/objs/union";
-import { Data, type Effect, Match } from "effect";
-import type { ParseError } from "effect/ParseResult";
-import type { KennethParseError } from "src/errors/kenneth/parse";
-import type { InfixOperator } from "src/schemas/infix-operator";
-import type { IdentExp } from "src/schemas/nodes/exps/ident";
-import type { BlockStmt } from "src/schemas/nodes/stmts/block";
-import type { Environment } from "./environment";
+import { Data, Match } from "effect";
 
 const { $is, $match } = Data.taggedEnum<Obj>();
 
@@ -32,70 +16,6 @@ export const isIdentObj = $is("IdentObj");
 export const isInfixObj = $is("InfixObj");
 
 export const objMatch = $match;
-
-export const createIntegerObj = (value: number) =>
-	IntegerObj.make({
-		value,
-	});
-
-const createBooleanObj = (value: boolean) =>
-	BooleanObj.make({
-		value,
-	});
-
-export const FALSE = createBooleanObj(false);
-export const TRUE = createBooleanObj(true);
-
-export const nativeBoolToObjectBool = (input: boolean) =>
-	input ? TRUE : FALSE;
-
-export const createReturnObj = (value: Obj) => ReturnObj.make({ value });
-
-export const createErrorObj = (message: string) =>
-	ErrorObj.make({
-		message,
-	});
-
-export const createFunctionObj = (
-	params: readonly IdentExp[],
-	body: BlockStmt,
-	env: Environment,
-) =>
-	FunctionObj.make({
-		params,
-		body,
-		env,
-	});
-
-export const createStringObj = (value: string) =>
-	StringObj.make({
-		value,
-	});
-
-export const createBuiltInObj = (
-	fn: (
-		...args: Obj[]
-	) => Effect.Effect<Obj, KennethParseError | ParseError | never, never>,
-) =>
-	BuiltInObj.make({
-		fn,
-	});
-
-export const createIdentObj = (identExp: IdentExp) =>
-	IdentObj.make({
-		identExp,
-	});
-
-export const createInfixObj = (
-	left: Obj,
-	operator: InfixOperator,
-	right: Obj,
-) =>
-	InfixObj.make({
-		left,
-		operator,
-		right,
-	});
 
 export const objInspect = (obj: Obj): string =>
 	Match.value(obj).pipe(

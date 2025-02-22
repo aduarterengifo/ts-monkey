@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { nodeString, tokenLiteral } from "@/schemas/nodes/union";
+import { ErrorObj } from "@/schemas/objs/error";
 import {
 	Effect,
 	Layer,
@@ -18,12 +19,7 @@ import { LetStmt } from "src/schemas/nodes/stmts/let";
 import { ReturnStmt } from "src/schemas/nodes/stmts/return";
 import { TokenType } from "src/schemas/token-types/union";
 import { Eval, Evaluator } from "src/services/evaluator";
-import {
-	createErrorObj,
-	isErrorObj,
-	isFunctionObj,
-	isStringObj,
-} from "src/services/object";
+import { isErrorObj, isFunctionObj, isStringObj } from "src/services/object";
 import { createEnvironment } from "src/services/object/environment";
 import { Parser } from "src/services/parser";
 import { testLetStatement } from "../parser/statements/let";
@@ -606,12 +602,14 @@ for (const { name, kind, suite } of testSuites) {
 						Effect.catchAll((error) => {
 							console.log("error", error);
 							if (error._tag === "KennethEvalError") {
-								return Effect.succeed(createErrorObj(error.message)).pipe(
-									Effect.tap(Effect.logDebug("blew up")),
-								);
+								return Effect.succeed(
+									ErrorObj.make({ message: error.message }),
+								).pipe(Effect.tap(Effect.logDebug("blew up")));
 							}
 							if (error._tag === "ParseError") {
-								return Effect.succeed(createErrorObj(error.message));
+								return Effect.succeed(
+									ErrorObj.make({ message: error.message }),
+								);
 							}
 
 							return expect(true).toBe(false);

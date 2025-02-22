@@ -1,5 +1,10 @@
-import { Schema } from "effect";
-import { infixOperatorSchema } from "../infix-operator";
+import { type PolynomialObj, diffPolynomial } from "@/services/diff/obj";
+import { Effect, Schema } from "effect";
+import { type InfixOperator, infixOperatorSchema } from "../infix-operator";
+import type { IdentExp } from "../nodes/exps/ident";
+import { TokenType } from "../token-types/union";
+import type { IdentObj } from "./ident";
+import { IntegerObj } from "./int";
 import { Obj } from "./union";
 
 const fields = {
@@ -20,3 +25,13 @@ export const InfixObj = Schema.TaggedStruct("InfixObj", {
 });
 
 export const infixObjEq = Schema.equivalence(InfixObj);
+
+export const OpInfixObj = (op: InfixOperator) => (left: Obj, right: Obj) =>
+	InfixObj.make({
+		operator: op,
+		left,
+		right,
+	});
+
+export const asteriskInfixObj = OpInfixObj(TokenType.ASTERISK);
+export const exponentInfixObj = OpInfixObj(TokenType.EXPONENT);

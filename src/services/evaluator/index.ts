@@ -1,9 +1,14 @@
+import { FALSE, TRUE, nativeBoolToObjectBool } from "@/schemas/objs/bool";
 import type { BuiltInObj } from "@/schemas/objs/built-in";
-import type { FunctionObj } from "@/schemas/objs/function";
-import type { IntegerObj } from "@/schemas/objs/int";
+import { FunctionObj } from "@/schemas/objs/function";
+import { IdentObj } from "@/schemas/objs/ident";
+import { InfixObj } from "@/schemas/objs/infix";
+import { IntegerObj } from "@/schemas/objs/int";
 import { NULL } from "@/schemas/objs/null";
-import type { StringObj } from "@/schemas/objs/string";
+import { ReturnObj } from "@/schemas/objs/return";
+import { StringObj } from "@/schemas/objs/string";
 import type { Obj } from "@/schemas/objs/union";
+import { PolynomialObj } from "@/schemas/objs/unions/polynomials";
 import { Effect, Match, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import type { KennethParseError } from "src/errors/kenneth/parse";
@@ -22,16 +27,8 @@ import { TokenType } from "src/schemas/token-types/union";
 import type { Token } from "src/schemas/token/unions/all";
 import { KennethEvalError } from "../../errors/kenneth/eval";
 import type { InfixOperator } from "../../schemas/infix-operator";
-import { type PolynomialObj, diffPolynomial } from "../diff/obj";
+import { diffPolynomial } from "../diff/obj";
 import {
-	FALSE,
-	TRUE,
-	createFunctionObj,
-	createIdentObj,
-	createInfixObj,
-	createIntegerObj,
-	createReturnObj,
-	createStringObj,
 	isBuiltInObj,
 	isFunctionObj,
 	isIdentObj,
@@ -39,7 +36,6 @@ import {
 	isIntegerObj,
 	isReturnObj,
 	isStringObj,
-	nativeBoolToObjectBool,
 } from "../object";
 import {
 	type Environment,
@@ -61,7 +57,7 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 			evalProgram(statements, env).pipe(Effect.map(unwrapReturnvalue)),
 		IdentExp: (ident) =>
 			identExp && IdentExpEq(identExp, ident)
-				? Effect.succeed(createIdentObj(ident))
+				? Effect.succeed(IdentObj.make({ identExp: ident }))
 				: evalIdentExpression(ident, env),
 		LetStmt: ({ value, name }) =>
 			Effect.gen(function* () {
@@ -70,9 +66,11 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 				return NULL;
 			}),
 		ReturnStmt: ({ value }) =>
-			Eval(value)(env, identExp).pipe(Effect.map(createReturnObj)),
+			Eval(value)(env, identExp).pipe(
+				Effect.map((obj) => ReturnObj.make({ value: obj })),
+			),
 		ExpStmt: ({ expression }) => Eval(expression)(env, identExp),
-		IntExp: ({ value }) => Effect.succeed(createIntegerObj(+value)),
+		IntExp: ({ value }) => Effect.succeed(IntegerObj.make({ value })),
 		PrefixExp: ({ operator, right }) =>
 			Effect.gen(function* () {
 				const r = yield* Eval(right)(env, identExp);
@@ -90,7 +88,7 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 		IfExp: (ie) => evalIfExpression(ie, env, identExp),
 		BlockStmt: (stmt) => evalBlockStatement(stmt, env, identExp),
 		FuncExp: ({ parameters, body }) =>
-			Effect.succeed(createFunctionObj(parameters, body, env)),
+			Effect.succeed(FunctionObj.make({ params: parameters, body, env })),
 		CallExp: ({ fn, args }) =>
 			Effect.gen(function* () {
 				const fnEval = yield* Eval(fn)(env, identExp);
@@ -100,7 +98,7 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 					? applyFunction(fnEval, identExp)(argsEval)
 					: new KennethEvalError({ message: `not a function: ${fnEval._tag}` });
 			}),
-		StrExp: ({ value }) => Effect.succeed(createStringObj(value)),
+		StrExp: ({ value }) => Effect.succeed(StringObj.make({ value })),
 		DiffExp: (diffExp) => evalDiff(diffExp)(env),
 	});
 
@@ -121,9 +119,10 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 		// yield* logDebug('evalDiff')
 		// this is during running this function. the diff function to be sure! so it will return a number
 		// NEED to do a soft eval of all the expressions here.
-		const softEval = yield* Eval(diffExp.exp)(env, diffExp.params[0]);
+		const softEval = yield* Eval(diffExp.exp)(env, diffExp.params[0]).pipe(
+			Effect.flatMap(Schema.decodeUnknown(PolynomialObj)),
+		);
 
-		// yield* logDebug('softEval', softEval)
 		const diffSoftEval = yield* diffPolynomial(
 			softEval as PolynomialObj,
 			diffExp.params[0],
@@ -258,7 +257,7 @@ export const evalInfixExpression =
 				isInfixObj(left) ||
 				isInfixObj(right)
 			) {
-				return createInfixObj(left, operator, right);
+				return InfixObj.make({ left, operator, right });
 			}
 			if (isIntegerObj(left) && isIntegerObj(right)) {
 				return evalIntegerInfixExpression(operator, left, right);
@@ -286,8 +285,8 @@ export const evalInfixExpression =
 const nativeToObj = (result: number | boolean | string) =>
 	Match.value(result).pipe(
 		Match.when(Match.boolean, (bool) => nativeBoolToObjectBool(bool)),
-		Match.when(Match.number, (num) => createIntegerObj(num)),
-		Match.when(Match.string, (str) => createStringObj(str)),
+		Match.when(Match.number, (num) => IntegerObj.make({ value: num })),
+		Match.when(Match.string, (str) => StringObj.make({ value: str })),
 		Match.exhaustive,
 	);
 
@@ -327,7 +326,7 @@ export const evalPrefixExpression =
 		);
 
 export const evalMinusPrefixOperatorExpression = (right: IntegerObj) =>
-	Effect.succeed(createIntegerObj(-right.value));
+	Effect.succeed(IntegerObj.make({ value: -right.value }));
 
 export const evalBangOperatorExpression = (right: Obj) =>
 	Effect.succeed(
