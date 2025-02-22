@@ -4,7 +4,7 @@ import type { KennethParseError } from "src/errors/kenneth/parse";
 import type { DiffExp } from "src/schemas/nodes/exps/diff";
 import { type IdentExp, IdentExpEq } from "src/schemas/nodes/exps/ident";
 import type { IfExp } from "src/schemas/nodes/exps/if";
-import { InfixExp } from "src/schemas/nodes/exps/infix";
+import { InfixExp, OpInfixExp } from "src/schemas/nodes/exps/infix";
 import { nativeToIntExp } from "src/schemas/nodes/exps/int";
 import type { Exp } from "src/schemas/nodes/exps/union";
 import type { Program } from "src/schemas/nodes/program";
@@ -142,12 +142,7 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 					Effect.gen(function* () {
 						const leftExp = yield* convertToExp(left as PolynomialObj);
 						const rightExp = yield* convertToExp(right as PolynomialObj);
-						return new InfixExp({
-							token: { _tag: operator, literal: operator },
-							operator,
-							left: leftExp,
-							right: rightExp,
-						});
+						return OpInfixExp(operator)(leftExp, rightExp);
 					}),
 				),
 				Match.exhaustive,

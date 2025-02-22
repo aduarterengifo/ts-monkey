@@ -1,16 +1,16 @@
-import { Effect, Match, Schema } from 'effect'
+import { Effect, Match, Schema } from "effect";
+import { DiffExp } from "src/schemas/nodes/exps/diff";
+import { IdentExp } from "src/schemas/nodes/exps/ident";
+import { BlockStmt } from "src/schemas/nodes/stmts/block";
+import { ExpStmt } from "src/schemas/nodes/stmts/exp";
 import {
+	type Obj,
 	createBuiltInObj,
 	createErrorObj,
 	createFunctionObj,
 	createIntegerObj,
-	type Obj,
-} from '.'
-import { IdentExp } from 'src/schemas/nodes/exps/ident'
-import { BlockStmt } from 'src/schemas/nodes/stmts/block'
-import { DiffExp } from 'src/schemas/nodes/exps/diff'
-import type { Environment } from './environment'
-import { ExpStmt } from 'src/schemas/nodes/stmts/exp'
+} from ".";
+import type { Environment } from "./environment";
 
 const diff2 = (...args: Obj[]) =>
 	Effect.gen(function* () {
@@ -27,31 +27,31 @@ const diff2 = (...args: Obj[]) =>
 					env: Schema.Unknown,
 				}),
 			),
-		)(args))[0]
+		)(args))[0];
 		// ASSUME THERE IS ONLY A SINGLE STATEMENT - FOR NOW
 		const expStmt = (yield* Schema.decodeUnknown(Schema.Tuple(ExpStmt))(
 			statements,
-		))[0]
+		))[0];
 
-		const newBody = new BlockStmt({
+		const newBody = BlockStmt.make({
 			token,
 			statements: [
-				new ExpStmt({
+				ExpStmt.make({
 					...expStmt,
-					expression: new DiffExp({
+					expression: DiffExp.make({
 						token: {
-							_tag: 'diff',
-							literal: 'diff',
+							_tag: "diff",
+							literal: "diff",
 						},
 						exp: expStmt.expression,
 						params,
 					}),
 				}),
 			],
-		})
+		});
 
-		return createFunctionObj(params, newBody, env as Environment)
-	})
+		return createFunctionObj(params, newBody, env as Environment);
+	});
 
 export const builtins = {
 	len: createBuiltInObj((...args: Obj[]) =>
@@ -61,13 +61,13 @@ export const builtins = {
 					createErrorObj(
 						`wrong number of arguments. got=${args.length}, want=1`,
 					),
-				)
+				);
 			}
 
-			const firstArg = args[0]
+			const firstArg = args[0];
 
 			return yield* Match.value(firstArg).pipe(
-				Match.tag('StringObj', (strObj) =>
+				Match.tag("StringObj", (strObj) =>
 					Effect.succeed(createIntegerObj(strObj.value.length)),
 				),
 				Match.orElse(() =>
@@ -77,12 +77,12 @@ export const builtins = {
 						),
 					),
 				),
-			)
+			);
 		}),
 	),
 	diff: createBuiltInObj(diff2),
-} as const
+} as const;
 
-const builtinKeys = Object.keys(builtins) as (keyof typeof builtins)[] // hack
+const builtinKeys = Object.keys(builtins) as (keyof typeof builtins)[]; // hack
 
-export const builtinsKeySchema = Schema.Literal(...builtinKeys)
+export const builtinsKeySchema = Schema.Literal(...builtinKeys);

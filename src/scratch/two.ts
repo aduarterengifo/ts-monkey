@@ -11,7 +11,7 @@ import {
 
 const program = Effect.gen(function* () {
 	const istmt = nativeToExp(6);
-	const rstmt = new ReturnStmt({
+	const rstmt = ReturnStmt.make({
 		token: { _tag: "let", literal: "let" },
 		value: istmt,
 	}) as Stmt;

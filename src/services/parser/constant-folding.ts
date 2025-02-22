@@ -1,75 +1,75 @@
-import { Effect, Either, Match, Schema } from 'effect'
-import { decodeUnknownEither } from 'effect/ParseResult'
-import { IntExp } from '../../schemas/nodes/exps/int'
-import { nativeToExp, type Exp } from '../../schemas/nodes/exps/union'
-import { BlockStmt } from '../../schemas/nodes/stmts/block'
-import { ExpStmt } from '../../schemas/nodes/stmts/exp'
-import { LetStmt } from '../../schemas/nodes/stmts/let'
-import { ReturnStmt } from '../../schemas/nodes/stmts/return'
-import type { Stmt } from '../../schemas/nodes/stmts/union'
+import { Effect, Either, Match, Schema } from "effect";
+import { decodeUnknownEither } from "effect/ParseResult";
+import { InfixExp } from "../../schemas/nodes/exps/infix";
+import { IntExp } from "../../schemas/nodes/exps/int";
+import { StrExp } from "../../schemas/nodes/exps/str";
+import { type Exp, nativeToExp } from "../../schemas/nodes/exps/union";
+import { BlockStmt } from "../../schemas/nodes/stmts/block";
+import { ExpStmt } from "../../schemas/nodes/stmts/exp";
+import { LetStmt } from "../../schemas/nodes/stmts/let";
+import { ReturnStmt } from "../../schemas/nodes/stmts/return";
+import type { Stmt } from "../../schemas/nodes/stmts/union";
+import { TokenType } from "../../schemas/token-types/union";
 import {
 	OPERATOR_TO_FUNCTION_MAP,
 	STRING_OPERATOR_TO_FUNCTION_MAP,
-} from '../evaluator/constants'
-import { InfixExp } from '../../schemas/nodes/exps/infix'
-import { StrExp } from '../../schemas/nodes/exps/str'
-import { TokenType } from '../../schemas/token-types/union'
+} from "../evaluator/constants";
 
 export const constantFoldingOverStmt = (
 	stmt: Stmt,
 ): Effect.Effect<Stmt, never, never> =>
 	Match.value(stmt).pipe(
-		Match.tag('BlockStmt', ({ token, statements }) =>
+		Match.tag("BlockStmt", ({ token, statements }) =>
 			Effect.gen(function* () {
-				return new BlockStmt({
+				return BlockStmt.make({
 					token,
 					statements: yield* Effect.all(
 						statements.map(constantFoldingOverStmt),
 					),
-				})
+				});
 			}),
 		),
-		Match.tag('ExpStmt', ({ token, expression }) =>
+		Match.tag("ExpStmt", ({ token, expression }) =>
 			Effect.gen(function* () {
-				return new ExpStmt({
+				return ExpStmt.make({
 					token,
 					expression: yield* constantFoldingOverExp(expression),
-				})
+				});
 			}),
 		),
-		Match.tag('ReturnStmt', ({ token, value }) =>
+		Match.tag("ReturnStmt", ({ token, value }) =>
 			Effect.gen(function* () {
-				return new ReturnStmt({
+				return ReturnStmt.make({
 					token,
 					value: yield* constantFoldingOverExp(value),
-				})
+				});
 			}),
 		),
-		Match.tag('LetStmt', ({ token, name, value }) =>
+		Match.tag("LetStmt", ({ token, name, value }) =>
 			Effect.gen(function* () {
-				return new LetStmt({
+				return LetStmt.make({
 					token,
 					name,
 					value: yield* constantFoldingOverExp(value),
-				})
+				});
 			}),
 		),
 		Match.exhaustive,
-	)
+	);
 
 const constantFoldingOverExp = (exp: Exp): Effect.Effect<Exp, never, never> =>
 	Match.value(exp).pipe(
-		Match.tag('InfixExp', ({ token, left, operator, right }) =>
+		Match.tag("InfixExp", ({ token, left, operator, right }) =>
 			Effect.gen(function* () {
-				const foldedLeft = yield* constantFoldingOverExp(left)
-				const foldedRight = yield* constantFoldingOverExp(right)
+				const foldedLeft = yield* constantFoldingOverExp(left);
+				const foldedRight = yield* constantFoldingOverExp(right);
 
 				const intResult = Schema.decodeUnknownEither(
 					Schema.Struct({ left: IntExp, right: IntExp }),
 				)({
 					left: foldedLeft,
 					right: foldedRight,
-				})
+				});
 
 				if (Either.isRight(intResult)) {
 					return nativeToExp(
@@ -77,7 +77,7 @@ const constantFoldingOverExp = (exp: Exp): Effect.Effect<Exp, never, never> =>
 							intResult.right.left.value,
 							intResult.right.right.value,
 						),
-					)
+					);
 				}
 
 				const strResult = decodeUnknownEither(
@@ -86,7 +86,7 @@ const constantFoldingOverExp = (exp: Exp): Effect.Effect<Exp, never, never> =>
 						operator: Schema.Literal(TokenType.PLUS),
 						right: StrExp,
 					}),
-				)({ left: foldedLeft, operator, right: foldedRight })
+				)({ left: foldedLeft, operator, right: foldedRight });
 
 				if (Either.isRight(strResult)) {
 					return nativeToExp(
@@ -94,15 +94,15 @@ const constantFoldingOverExp = (exp: Exp): Effect.Effect<Exp, never, never> =>
 							strResult.right.left.value,
 							strResult.right.right.value,
 						),
-					)
+					);
 				}
-				return new InfixExp({
+				return InfixExp.make({
 					token,
 					left: foldedLeft,
 					operator,
 					right: foldedRight,
-				})
+				});
 			}),
 		),
 		Match.orElse(() => Effect.succeed(exp)),
-	)
+	);

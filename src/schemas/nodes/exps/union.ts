@@ -1,6 +1,4 @@
 import { Data, Match, Schema } from "effect";
-import { func } from "effect/FastCheck";
-import { tokenLiteral } from "../union";
 import { BoolExp, type BoolExpEncoded, nativeToBoolExp } from "./boolean";
 import { CallExp, type CallExpEncoded } from "./call";
 import { DiffExp, type DiffExpEncoded } from "./diff";
