@@ -4,7 +4,7 @@ import type { KennethParseError } from "src/errors/kenneth/parse";
 import type { DiffExp } from "src/schemas/nodes/exps/diff";
 import { type IdentExp, IdentExpEq } from "src/schemas/nodes/exps/ident";
 import type { IfExp } from "src/schemas/nodes/exps/if";
-import { InfixExp, OpInfixExp } from "src/schemas/nodes/exps/infix";
+import { OpInfixExp } from "src/schemas/nodes/exps/infix";
 import { nativeToIntExp } from "src/schemas/nodes/exps/int";
 import type { Exp } from "src/schemas/nodes/exps/union";
 import type { Program } from "src/schemas/nodes/program";
