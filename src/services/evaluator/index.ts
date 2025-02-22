@@ -1,3 +1,9 @@
+import type { BuiltInObj } from "@/schemas/objs/built-in";
+import type { FunctionObj } from "@/schemas/objs/function";
+import type { IntegerObj } from "@/schemas/objs/int";
+import { NULL } from "@/schemas/objs/null";
+import type { StringObj } from "@/schemas/objs/string";
+import type { Obj } from "@/schemas/objs/union";
 import { Effect, Match, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import type { KennethParseError } from "src/errors/kenneth/parse";
@@ -18,13 +24,7 @@ import { KennethEvalError } from "../../errors/kenneth/eval";
 import type { InfixOperator } from "../../schemas/infix-operator";
 import { type PolynomialObj, diffPolynomial } from "../diff/obj";
 import {
-	type BuiltInObj,
 	FALSE,
-	type FunctionObj,
-	type IntegerObj,
-	NULL,
-	type Obj,
-	type StringObj,
 	TRUE,
 	createFunctionObj,
 	createIdentObj,

@@ -19,7 +19,6 @@ import { ReturnStmt } from "src/schemas/nodes/stmts/return";
 import { TokenType } from "src/schemas/token-types/union";
 import { Eval, Evaluator } from "src/services/evaluator";
 import {
-	type Obj,
 	createErrorObj,
 	isErrorObj,
 	isFunctionObj,
