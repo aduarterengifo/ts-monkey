@@ -9,7 +9,6 @@ import {
 	Match,
 	Schema,
 } from "effect";
-import { logDebug } from "effect/Effect";
 import { CallExp } from "src/schemas/nodes/exps/call";
 import { FuncExp } from "src/schemas/nodes/exps/function";
 import { PrefixExp } from "src/schemas/nodes/exps/prefix";
@@ -278,10 +277,10 @@ const testSuites: {
 			{
 				description: "prefix expressions",
 				tests: [
-					["!5;", { operator: "!", value: 5 }],
-					["-15;", { operator: "-", value: 15 }],
-					["!true", { operator: "!", value: true }],
-					["!false", { operator: "!", value: false }],
+					["!5;", { operator: TokenType.BANG, value: 5 }],
+					["-15;", { operator: TokenType.MINUS, value: 15 }],
+					["!true", { operator: TokenType.BANG, value: true }],
+					["!false", { operator: TokenType.BANG, value: false }],
 				],
 				fn:
 					(expected: { operator: string; value: number | boolean }) =>

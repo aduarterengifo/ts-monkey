@@ -24,8 +24,8 @@ export type PolynomialObj = IntegerObj | IdentObj | InfixObj;
 export const newTerm = (coeff: number, x: IdentObj, power: number) =>
 	createInfixObj(
 		createIntegerObj(coeff),
-		"*",
-		createInfixObj(x, "**", createIntegerObj(power)),
+		TokenType.ASTERISK,
+		createInfixObj(x, TokenType.EXPONENT, createIntegerObj(power)),
 	);
 
 const processTerm = (exp: PolynomialObj, x: IdentExp) =>
@@ -38,7 +38,7 @@ const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 					Schema.Literal(TokenType.ASTERISK, TokenType.EXPONENT),
 				)(operator);
 				return yield* Match.value(op).pipe(
-					Match.when("*", () =>
+					Match.when(TokenType.ASTERISK, () =>
 						Effect.gen(function* () {
 							const coeff = left as IntegerObj;
 
@@ -56,9 +56,9 @@ const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 										right: secondRight,
 									}) =>
 										Effect.gen(function* () {
-											yield* Schema.decodeUnknown(Schema.Literal("**"))(
-												secondOperator,
-											);
+											yield* Schema.decodeUnknown(
+												Schema.Literal(TokenType.EXPONENT),
+											)(secondOperator);
 											//const secondLeftParsed = secondLeft as IdentObj
 
 											// yield* expectIdentEquivalence(secondLeftParsed, x)
@@ -79,7 +79,7 @@ const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 							);
 						}),
 					),
-					Match.when("**", () =>
+					Match.when(TokenType.EXPONENT, () =>
 						Effect.gen(function* () {
 							//const identExp = left as IdentObj
 
@@ -113,28 +113,35 @@ export const diffPolynomial = (
 				const right = infixObj.right as PolynomialObj;
 
 				const operator = yield* Schema.decodeUnknown(
-					Schema.Literal("+", "*", "/", "**"),
+					Schema.Literal(
+						TokenType.PLUS,
+						TokenType.ASTERISK,
+						TokenType.SLASH,
+						TokenType.EXPONENT,
+					),
 				)(infixObj.operator);
 
 				return yield* Match.value(operator).pipe(
-					Match.when("*", () =>
+					Match.when(TokenType.ASTERISK, () =>
 						Match.value(obj).pipe(
 							Match.tag("InfixObj", () =>
 								Effect.gen(function* () {
 									if (
-										(left._tag === "InfixObj" && left.operator === "+") ||
-										(right._tag === "InfixObj" && right.operator === "+")
+										(left._tag === "InfixObj" &&
+											left.operator === TokenType.PLUS) ||
+										(right._tag === "InfixObj" &&
+											right.operator === TokenType.PLUS)
 									) {
 										return createInfixObj(
 											createInfixObj(
 												yield* diffPolynomial(left, x),
-												"*",
+												TokenType.ASTERISK,
 												right,
 											),
-											"+",
+											TokenType.PLUS,
 											createInfixObj(
 												left,
-												"*",
+												TokenType.ASTERISK,
 												yield* diffPolynomial(right, x),
 											),
 										);
@@ -145,30 +152,36 @@ export const diffPolynomial = (
 							Match.orElse(() => processTerm(obj, x)), // leaf
 						),
 					),
-					Match.when("/", () =>
+					Match.when(TokenType.SLASH, () =>
 						Match.value(obj).pipe(
 							Match.tag("InfixObj", () =>
 								Effect.gen(function* () {
 									if (
-										(left._tag === "InfixObj" && left.operator === "+") ||
-										(right._tag === "InfixObj" && right.operator === "+")
+										(left._tag === "InfixObj" &&
+											left.operator === TokenType.PLUS) ||
+										(right._tag === "InfixObj" &&
+											right.operator === TokenType.PLUS)
 									) {
 										return createInfixObj(
 											createInfixObj(
 												createInfixObj(
 													yield* diffPolynomial(left, x),
-													"*",
+													TokenType.ASTERISK,
 													right,
 												),
-												"-",
+												TokenType.MINUS,
 												createInfixObj(
 													left,
-													"*",
+													TokenType.ASTERISK,
 													yield* diffPolynomial(right, x),
 												),
 											),
-											"/",
-											createInfixObj(right, "**", createIntegerObj(2)),
+											TokenType.SLASH,
+											createInfixObj(
+												right,
+												TokenType.EXPONENT,
+												createIntegerObj(2),
+											),
 										);
 									}
 									return yield* processTerm(obj, x); // leaf
@@ -177,13 +190,13 @@ export const diffPolynomial = (
 							Match.orElse(() => processTerm(obj, x)), // leaf
 						),
 					),
-					Match.when("**", () => processTerm(obj, x)),
-					Match.when("+", () =>
+					Match.when(TokenType.EXPONENT, () => processTerm(obj, x)),
+					Match.when(TokenType.PLUS, () =>
 						Effect.gen(function* () {
 							return yield* Effect.succeed(
 								createInfixObj(
 									yield* diffPolynomial(left, x),
-									"+",
+									TokenType.PLUS,
 									yield* diffPolynomial(right, x),
 								),
 							);
