@@ -1,9 +1,14 @@
-import { Data, Match } from "effect";
-import type { Exp } from "./exps/union";
-import type { Program } from "./program";
-import type { Stmt } from "./stmts/union";
+import { Data, Match, Pretty, Schema } from "effect";
+import { type Exp, type ExpEncoded, expSchema } from "./exps/union";
+import { Program } from "./program";
+
+import { type Stmt, type StmtEncoded, stmtSchema } from "./stmts/union";
 
 export type KNode = Exp | Stmt | Program;
+
+export type KNodeEncoded = ExpEncoded | StmtEncoded;
+
+export const kNodeSchema = Schema.Union(expSchema, stmtSchema, Program);
 
 export const { $is: isKNode, $match: matchKnode } = Data.taggedEnum<KNode>();
 
@@ -14,3 +19,5 @@ export const tokenLiteral = (node: KNode) =>
 		),
 		Match.orElse(() => `${node.token.literal}`),
 	);
+
+export const prettyNode = Pretty.make(kNodeSchema);
