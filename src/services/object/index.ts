@@ -1,4 +1,14 @@
 import { nodeString } from "@/schemas/nodes/union";
+import { BooleanObj } from "@/schemas/objs/bool";
+import { BuiltInObj } from "@/schemas/objs/built-in";
+import { ErrorObj } from "@/schemas/objs/error";
+import { FunctionObj } from "@/schemas/objs/function";
+import { IdentObj } from "@/schemas/objs/ident";
+import { InfixObj } from "@/schemas/objs/infix";
+import { IntegerObj } from "@/schemas/objs/int";
+import { NullObj } from "@/schemas/objs/null";
+import { ReturnObj } from "@/schemas/objs/return";
+import { StringObj } from "@/schemas/objs/string";
 import type { Obj } from "@/schemas/objs/union";
 import { Data, type Effect, Match } from "effect";
 import type { ParseError } from "effect/ParseResult";
@@ -8,31 +18,7 @@ import type { IdentExp } from "src/schemas/nodes/exps/ident";
 import type { BlockStmt } from "src/schemas/nodes/stmts/block";
 import type { Environment } from "./environment";
 
-export type IntegerObj = Extract<Obj, { _tag: "IntegerObj" }>;
-export type BooleanObj = Extract<Obj, { _tag: "BooleanObj" }>;
-export type NullObj = Extract<Obj, { _tag: "NullObj" }>;
-export type ReturnObj = Extract<Obj, { _tag: "ReturnObj" }>;
-export type ErrorObj = Extract<Obj, { _tag: "ErrorObj" }>;
-export type FunctionObj = Extract<Obj, { _tag: "FunctionObj" }>;
-export type StringObj = Extract<Obj, { _tag: "StringObj" }>;
-export type BuiltInObj = Extract<Obj, { _tag: "BuiltInObj" }>;
-export type IdentObj = Extract<Obj, { _tag: "IdentObj" }>;
-export type InfixObj = Extract<Obj, { _tag: "InfixObj" }>;
-
-const {
-	$is,
-	$match,
-	IntegerObj,
-	BooleanObj,
-	NullObj,
-	ReturnObj,
-	ErrorObj,
-	FunctionObj,
-	StringObj,
-	BuiltInObj,
-	IdentObj,
-	InfixObj,
-} = Data.taggedEnum<Obj>();
+const { $is, $match } = Data.taggedEnum<Obj>();
 
 export const isIntegerObj = $is("IntegerObj");
 export const isBooleanObj = $is("BooleanObj");
@@ -48,12 +34,12 @@ export const isInfixObj = $is("InfixObj");
 export const objMatch = $match;
 
 export const createIntegerObj = (value: number) =>
-	IntegerObj({
+	IntegerObj.make({
 		value,
 	});
 
 const createBooleanObj = (value: boolean) =>
-	BooleanObj({
+	BooleanObj.make({
 		value,
 	});
 
@@ -63,14 +49,10 @@ export const TRUE = createBooleanObj(true);
 export const nativeBoolToObjectBool = (input: boolean) =>
 	input ? TRUE : FALSE;
 
-const createNullObj = () => NullObj();
-
-export const NULL = createNullObj();
-
-export const createReturnObj = (value: Obj) => ReturnObj({ value });
+export const createReturnObj = (value: Obj) => ReturnObj.make({ value });
 
 export const createErrorObj = (message: string) =>
-	ErrorObj({
+	ErrorObj.make({
 		message,
 	});
 
@@ -79,14 +61,14 @@ export const createFunctionObj = (
 	body: BlockStmt,
 	env: Environment,
 ) =>
-	FunctionObj({
+	FunctionObj.make({
 		params,
 		body,
 		env,
 	});
 
 export const createStringObj = (value: string) =>
-	StringObj({
+	StringObj.make({
 		value,
 	});
 
@@ -95,12 +77,12 @@ export const createBuiltInObj = (
 		...args: Obj[]
 	) => Effect.Effect<Obj, KennethParseError | ParseError | never, never>,
 ) =>
-	BuiltInObj({
+	BuiltInObj.make({
 		fn,
 	});
 
 export const createIdentObj = (identExp: IdentExp) =>
-	IdentObj({
+	IdentObj.make({
 		identExp,
 	});
 
@@ -109,7 +91,7 @@ export const createInfixObj = (
 	operator: InfixOperator,
 	right: Obj,
 ) =>
-	InfixObj({
+	InfixObj.make({
 		left,
 		operator,
 		right,
