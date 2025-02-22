@@ -1,4 +1,3 @@
 export interface INode {
-	readonly tokenLiteral: () => string
-	readonly string: () => string
+	readonly string: () => string;
 }

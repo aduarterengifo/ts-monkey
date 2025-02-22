@@ -1,28 +1,30 @@
-import { Effect, Match } from 'effect'
-import { isReturnStatement, type Statement } from '../../../src/services/ast'
-import { ParseError } from '../../../src/errors/kenneth/parse'
+import { KennethParseError } from "@/errors/kenneth/parse";
+import type { Stmt } from "@/schemas/nodes/stmts/union";
+import { tokenLiteral } from "@/schemas/nodes/union";
+import { isReturnStatement } from "@/services/ast";
+import { Effect, Match } from "effect";
 
-export const testReturnStatement = (statement: Statement, name: string) =>
+export const testReturnStatement = (statement: Stmt, name: string) =>
 	Effect.gen(function* () {
 		return yield* Match.value(statement).pipe(
 			Match.when(
-				(statement) => statement.tokenLiteral() !== 'return',
+				(statement) => tokenLiteral(statement) !== "return",
 				function* () {
-					return yield* new ParseError({
-						message: `expected statement.tokenLiteral() to be return instead got ${statement.tokenLiteral()}`,
-					})
+					return yield* new KennethParseError({
+						message: `expected tokenLiteral(statement) to be return instead got ${tokenLiteral(statement)}`,
+					});
 				},
 			),
 			Match.when(
 				(statement) => !isReturnStatement(statement),
 				function* () {
-					return yield* new ParseError({
-						message: 'expected statement to be return statement',
-					})
+					return yield* new KennethParseError({
+						message: "expected statement to be return statement",
+					});
 				},
 			),
 			Match.orElse(function* () {
-				return yield* Effect.succeed(true)
+				return yield* Effect.succeed(true);
 			}),
-		)
-	})
+		);
+	});

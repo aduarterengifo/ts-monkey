@@ -1,22 +1,22 @@
-import { Schema } from 'effect'
-import { type Token, tokenSchema } from 'src/schemas/token/unions/all'
-import type { INode } from '../interfaces/internal-node'
-import { type Exp, expSchema, type ExpEncoded } from './union'
+import { Schema } from "effect";
 import {
 	type InfixOperator,
 	infixOperatorSchema,
-} from 'src/schemas/infix-operator'
+} from "src/schemas/infix-operator";
+import { type Token, tokenSchema } from "src/schemas/token/unions/all";
+import type { INode } from "../interfaces/internal-node";
+import { type Exp, type ExpEncoded, expSchema } from "./union";
 
 export type InfixExpEncoded = {
-	readonly _tag: 'InfixExp'
-	readonly token: Token
-	readonly operator: InfixOperator
-	readonly left: ExpEncoded
-	readonly right: ExpEncoded
-}
+	readonly _tag: "InfixExp";
+	readonly token: Token;
+	readonly operator: InfixOperator;
+	readonly left: ExpEncoded;
+	readonly right: ExpEncoded;
+};
 
 export class InfixExp
-	extends Schema.TaggedClass<InfixExp>()('InfixExp', {
+	extends Schema.TaggedClass<InfixExp>()("InfixExp", {
 		token: tokenSchema,
 		operator: infixOperatorSchema,
 		left: Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
@@ -24,12 +24,9 @@ export class InfixExp
 	})
 	implements INode
 {
-	tokenLiteral() {
-		return `${this.token.literal}`
-	}
 	string() {
-		const t: string = `(${this.left.string()} ${this.operator} ${this.right.string()})`
-		return t
+		const t: string = `(${this.left.string()} ${this.operator} ${this.right.string()})`;
+		return t;
 	}
 }
 
@@ -42,4 +39,4 @@ export const OpInfixExp = (op: InfixOperator) => (left: Exp, right: Exp) =>
 		operator: op,
 		left,
 		right,
-	})
+	});
