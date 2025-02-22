@@ -1,18 +1,21 @@
-import { Schema } from 'effect'
-import type { INode } from '../interfaces/internal-node'
-import { BlockStmt, type BlockStmtEncoded } from '../stmts/block'
-import { type FnToken, fnTokenSchema } from 'src/schemas/token/function-literal'
-import { IdentExp, type IdentExpEncoded } from './ident'
+import { Schema } from "effect";
+import {
+	type FnToken,
+	fnTokenSchema,
+} from "src/schemas/token/function-literal";
+import type { INode } from "../interfaces/internal-node";
+import { BlockStmt, type BlockStmtEncoded } from "../stmts/block";
+import { IdentExp, type IdentExpEncoded } from "./ident";
 
 export type FuncExpEncoded = {
-	readonly _tag: 'FuncExp'
-	readonly token: FnToken
-	parameters: readonly IdentExpEncoded[]
-	readonly body: BlockStmtEncoded
-}
+	readonly _tag: "FuncExp";
+	readonly token: FnToken;
+	parameters: readonly IdentExpEncoded[];
+	readonly body: BlockStmtEncoded;
+};
 
 export class FuncExp
-	extends Schema.TaggedClass<FuncExp>()('FuncExp', {
+	extends Schema.TaggedClass<FuncExp>()("FuncExp", {
 		token: fnTokenSchema,
 		parameters: Schema.Array(
 			Schema.suspend((): Schema.Schema<IdentExp, IdentExpEncoded> => IdentExp),
@@ -21,16 +24,13 @@ export class FuncExp
 	})
 	implements INode
 {
-	tokenLiteral() {
-		return this.token.literal
-	}
 	string() {
 		return `
-			${this.tokenLiteral()}
+			${this.token.literal}
 			(
-			${this.parameters.map((param) => param.string()).join(', ')}
+			${this.parameters.map((param) => param.string()).join(", ")}
 			)
 			${this.body.string()}
-			`
+			`;
 	}
 }

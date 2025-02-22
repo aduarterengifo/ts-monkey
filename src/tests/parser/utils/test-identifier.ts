@@ -1,7 +1,8 @@
-import { Effect } from 'effect'
-import { KennethParseError } from 'src/errors/kenneth/parse'
-import type { Exp } from 'src/schemas/nodes/exps/union'
-import { isIdentExpression } from 'src/services/ast'
+import { tokenLiteral } from "@/schemas/nodes/union";
+import { Effect } from "effect";
+import { KennethParseError } from "src/errors/kenneth/parse";
+import type { Exp } from "src/schemas/nodes/exps/union";
+import { isIdentExpression } from "src/services/ast";
 
 export const testIdentifier = (expression: Exp, value: string) =>
 	Effect.gen(function* () {
@@ -13,9 +14,9 @@ export const testIdentifier = (expression: Exp, value: string) =>
 				? new KennethParseError({
 						message: `Expected identExpression.Value to be ${value}, got ${expression.value}`,
 					})
-				: expression.tokenLiteral() !== value
+				: tokenLiteral(expression) !== value
 					? new KennethParseError({
-							message: `Expected ident.TokenLiteral to be ${value}, got ${expression.tokenLiteral()}`,
+							message: `Expected ident.TokenLiteral to be ${value}, got ${tokenLiteral(expression)}`,
 						})
-					: Effect.succeed(true)
-	})
+					: Effect.succeed(true);
+	});
