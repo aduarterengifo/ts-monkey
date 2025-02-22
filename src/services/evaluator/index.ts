@@ -1,53 +1,57 @@
+import { Effect, Match, Schema } from "effect";
+import type { ParseError } from "effect/ParseResult";
+import type { KennethParseError } from "src/errors/kenneth/parse";
+import type { DiffExp } from "src/schemas/nodes/exps/diff";
+import { type IdentExp, IdentExpEq } from "src/schemas/nodes/exps/ident";
+import type { IfExp } from "src/schemas/nodes/exps/if";
+import { InfixExp } from "src/schemas/nodes/exps/infix";
+import { nativeToIntExp } from "src/schemas/nodes/exps/int";
+import type { Exp } from "src/schemas/nodes/exps/union";
+import type { Program } from "src/schemas/nodes/program";
+import type { BlockStmt } from "src/schemas/nodes/stmts/block";
+import type { Stmt } from "src/schemas/nodes/stmts/union";
+import { type KNode, matchKnode } from "src/schemas/nodes/union";
+import type { PrefixOperator } from "src/schemas/prefix-operator";
+import { TokenType } from "src/schemas/token-types/union";
+import type { Token } from "src/schemas/token/unions/all";
+import { KennethEvalError } from "../../errors/kenneth/eval";
+import type { InfixOperator } from "../../schemas/infix-operator";
+import { type PolynomialObj, diffPolynomial } from "../diff/obj";
 import {
-	createIntegerObj,
-	FALSE,
-	type IntegerObj,
-	isIntegerObj,
-	nativeBoolToObjectBool,
-	NULL,
-	TRUE,
-	type Obj,
-	createReturnObj,
-	isReturnObj,
-	createFunctionObj,
-	type FunctionObj,
-	isFunctionObj,
-	createStringObj,
 	type BuiltInObj,
-	isBuiltInObj,
-	isStringObj,
+	FALSE,
+	type FunctionObj,
+	type IntegerObj,
+	NULL,
+	type Obj,
 	type StringObj,
+	TRUE,
+	createFunctionObj,
 	createIdentObj,
-	isIdentObj,
 	createInfixObj,
+	createIntegerObj,
+	createReturnObj,
+	createStringObj,
+	isBuiltInObj,
+	isFunctionObj,
+	isIdentObj,
 	isInfixObj,
-} from '../object'
-import { Effect, Match, Schema } from 'effect'
-import { Parser } from '../parser'
-import { createEnvironment, type Environment } from '../object/environment'
-import type { InfixOperator } from '../../schemas/infix-operator'
-import type { ParseError } from 'effect/ParseResult'
-import { KennethEvalError } from '../../errors/kenneth/eval'
-import type { PrefixOperator } from 'src/schemas/prefix-operator'
-import type { KennethParseError } from 'src/errors/kenneth/parse'
-import { TokenType } from 'src/schemas/token-types/union'
-import { type KNode, matchKnode } from 'src/schemas/nodes/union'
-import { IdentExpEq, type IdentExp } from 'src/schemas/nodes/exps/ident'
-import type { IfExp } from 'src/schemas/nodes/exps/if'
-import type { BlockStmt } from 'src/schemas/nodes/stmts/block'
-import type { Program } from 'src/schemas/nodes/program'
-import type { Token } from 'src/schemas/token/unions/all'
-import { isInfixExp, type Exp } from 'src/schemas/nodes/exps/union'
-import type { Stmt } from 'src/schemas/nodes/stmts/union'
+	isIntegerObj,
+	isReturnObj,
+	isStringObj,
+	nativeBoolToObjectBool,
+} from "../object";
+import {
+	type Environment,
+	createEnvironment,
+	get,
+	set,
+} from "../object/environment";
+import { Parser } from "../parser";
 import {
 	OPERATOR_TO_FUNCTION_MAP,
 	STRING_OPERATOR_TO_FUNCTION_MAP,
-} from './constants'
-import type { DiffExp } from 'src/schemas/nodes/exps/diff'
-import { diffPolynomial, type PolynomialObj } from '../diff/obj'
-import { nativeToIntExp } from 'src/schemas/nodes/exps/int'
-import { InfixExp } from 'src/schemas/nodes/exps/infix'
-import { logDebug } from 'effect/Effect'
+} from "./constants";
 
 // TODO move diff to ENV!
 
@@ -61,9 +65,9 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 				: evalIdentExpression(ident, env),
 		LetStmt: ({ value, name }) =>
 			Effect.gen(function* () {
-				const val = yield* Eval(value)(env, identExp)
-				env.set(name.value, val)
-				return NULL
+				const val = yield* Eval(value)(env, identExp);
+				set(env)(name.value, val);
+				return NULL;
 			}),
 		ReturnStmt: ({ value }) =>
 			Eval(value)(env, identExp).pipe(Effect.map(createReturnObj)),
@@ -71,16 +75,16 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 		IntExp: ({ value }) => Effect.succeed(createIntegerObj(+value)),
 		PrefixExp: ({ operator, right }) =>
 			Effect.gen(function* () {
-				const r = yield* Eval(right)(env, identExp)
-				return yield* evalPrefixExpression(operator)(r)
+				const r = yield* Eval(right)(env, identExp);
+				return yield* evalPrefixExpression(operator)(r);
 			}),
 		InfixExp: ({ left, operator, right }) =>
 			Effect.gen(function* () {
-				const leftEval = yield* Eval(left)(env, identExp)
-				const rightEval = yield* Eval(right)(env, identExp)
+				const leftEval = yield* Eval(left)(env, identExp);
+				const rightEval = yield* Eval(right)(env, identExp);
 				// yield* logDebug('ident', identExp)
 				// yield* logDebug('rightEval', rightEval)
-				return yield* evalInfixExpression(operator)(leftEval)(rightEval)
+				return yield* evalInfixExpression(operator)(leftEval)(rightEval);
 			}),
 		BoolExp: ({ value }) => Effect.succeed(nativeBoolToObjectBool(value)),
 		IfExp: (ie) => evalIfExpression(ie, env, identExp),
@@ -89,16 +93,16 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 			Effect.succeed(createFunctionObj(parameters, body, env)),
 		CallExp: ({ fn, args }) =>
 			Effect.gen(function* () {
-				const fnEval = yield* Eval(fn)(env, identExp)
-				const argsEval = yield* evalExpressions(args, env, identExp)
+				const fnEval = yield* Eval(fn)(env, identExp);
+				const argsEval = yield* evalExpressions(args, env, identExp);
 
 				return yield* isFunctionObj(fnEval) || isBuiltInObj(fnEval)
 					? applyFunction(fnEval, identExp)(argsEval)
-					: new KennethEvalError({ message: `not a function: ${fnEval._tag}` })
+					: new KennethEvalError({ message: `not a function: ${fnEval._tag}` });
 			}),
 		StrExp: ({ value }) => Effect.succeed(createStringObj(value)),
 		DiffExp: (diffExp) => evalDiff(diffExp)(env),
-	})
+	});
 
 export const Eval =
 	(node: KNode) =>
@@ -110,80 +114,80 @@ export const Eval =
 		KennethEvalError | ParseError | KennethParseError,
 		never
 	> =>
-		nodeEvalMatch(env, identExp)(node).pipe(Effect.withSpan('eval.Eval'))
+		nodeEvalMatch(env, identExp)(node).pipe(Effect.withSpan("eval.Eval"));
 
 export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 	Effect.gen(function* () {
 		// yield* logDebug('evalDiff')
 		// this is during running this function. the diff function to be sure! so it will return a number
 		// NEED to do a soft eval of all the expressions here.
-		const softEval = yield* Eval(diffExp.exp)(env, diffExp.params[0])
+		const softEval = yield* Eval(diffExp.exp)(env, diffExp.params[0]);
 
 		// yield* logDebug('softEval', softEval)
 		const diffSoftEval = yield* diffPolynomial(
 			softEval as PolynomialObj,
 			diffExp.params[0],
-		)
+		);
 
 		// maybe simplest will be to convert back to exp and Eval.
 		const convertToExp = (
 			obj: PolynomialObj,
 		): Effect.Effect<Exp, KennethParseError> => {
 			return Match.value(obj).pipe(
-				Match.tag('IntegerObj', ({ value }) =>
+				Match.tag("IntegerObj", ({ value }) =>
 					Effect.succeed(nativeToIntExp(value)),
 				),
-				Match.tag('IdentObj', ({ identExp }) => Effect.succeed(identExp)),
-				Match.tag('InfixObj', ({ left, operator, right }) =>
+				Match.tag("IdentObj", ({ identExp }) => Effect.succeed(identExp)),
+				Match.tag("InfixObj", ({ left, operator, right }) =>
 					Effect.gen(function* () {
-						const leftExp = yield* convertToExp(left as PolynomialObj)
-						const rightExp = yield* convertToExp(right as PolynomialObj)
+						const leftExp = yield* convertToExp(left as PolynomialObj);
+						const rightExp = yield* convertToExp(right as PolynomialObj);
 						return new InfixExp({
 							token: { _tag: operator, literal: operator },
 							operator,
 							left: leftExp,
 							right: rightExp,
-						})
+						});
 					}),
 				),
 				Match.exhaustive,
-			)
-		}
+			);
+		};
 
-		const expResult = yield* convertToExp(diffSoftEval)
+		const expResult = yield* convertToExp(diffSoftEval);
 
 		// yield* logDebug('exp', expResult)
 		// yield* logDebug('--------------------------')
 
-		return yield* Eval(expResult)(env, undefined)
-	})
+		return yield* Eval(expResult)(env, undefined);
+	});
 
 export const applyFunction =
 	(fn: FunctionObj | BuiltInObj, ident: IdentExp | undefined) =>
 	(args: Obj[]) =>
 		Match.value(fn).pipe(
-			Match.tag('BuiltInObj', (fn) => fn.fn(...args)),
-			Match.tag('FunctionObj', (fn) =>
+			Match.tag("BuiltInObj", (fn) => fn.fn(...args)),
+			Match.tag("FunctionObj", (fn) =>
 				extendFunctionEnv(fn, args).pipe(
 					Effect.flatMap((env) => Eval(fn.body)(env, ident)),
 					Effect.map(unwrapReturnvalue),
 				),
 			),
 			Match.exhaustive,
-			Effect.withSpan('eval.applyFunction'),
-		)
+			Effect.withSpan("eval.applyFunction"),
+		);
 
 export const extendFunctionEnv = (fn: FunctionObj, args: Obj[]) =>
 	Effect.gen(function* () {
-		const env = createEnvironment(fn.env)
+		const env = createEnvironment(fn.env);
 		for (let i = 0; i < fn.params.length; i++) {
-			env.set(fn.params[i].value, args[i])
+			set(env)(fn.params[i].value, args[i]);
 		}
-		return yield* Effect.succeed(env)
-	}).pipe(Effect.withSpan('eval.extendFunctionEnv'))
+		return yield* Effect.succeed(env);
+	}).pipe(Effect.withSpan("eval.extendFunctionEnv"));
 
 export const unwrapReturnvalue = (obj: Obj) =>
-	isReturnObj(obj) ? obj.value : obj
+	isReturnObj(obj) ? obj.value : obj;
 
 export const evalExpressions = (
 	exps: readonly Exp[],
@@ -191,11 +195,11 @@ export const evalExpressions = (
 	ident: IdentExp | undefined,
 ) =>
 	Effect.all(exps.map((exp) => Eval(exp)(env, ident))).pipe(
-		Effect.withSpan('eval.evalExpressions'),
-	)
+		Effect.withSpan("eval.evalExpressions"),
+	);
 
 export const evalIdentExpression = (ident: IdentExp, env: Environment) =>
-	env.get(ident.value).pipe(Effect.withSpan('eval.evalIdentExpression'))
+	get(env)(ident.value).pipe(Effect.withSpan("eval.evalIdentExpression"));
 
 export const evalIfExpression = (
 	ie: IfExp,
@@ -205,20 +209,20 @@ export const evalIfExpression = (
 	Effect.gen(function* () {
 		const condition = yield* Eval(ie.condition)(env, ident).pipe(
 			Effect.map(isTruthy),
-		)
+		);
 		return condition
 			? yield* Eval(ie.consequence)(env, ident)
 			: ie.alternative
 				? yield* Eval(ie.alternative)(env, ident)
-				: NULL
-	}).pipe(Effect.withSpan('eval.evalIfExpression'))
+				: NULL;
+	}).pipe(Effect.withSpan("eval.evalIfExpression"));
 
 export const isTruthy = (obj: Obj) =>
 	Match.value(obj).pipe(
-		Match.tag('NullObj', () => false),
-		Match.tag('BooleanObj', (obj) => obj.value),
+		Match.tag("NullObj", () => false),
+		Match.tag("BooleanObj", (obj) => obj.value),
 		Match.orElse(() => true),
-	)
+	);
 
 const evalStatements = (
 	stmts: readonly Stmt[],
@@ -226,20 +230,20 @@ const evalStatements = (
 	ident: IdentExp | undefined,
 ) =>
 	Effect.gen(function* () {
-		let result: Obj = NULL
+		let result: Obj = NULL;
 		for (const stmt of stmts) {
-			result = yield* Eval(stmt)(env, ident)
+			result = yield* Eval(stmt)(env, ident);
 			if (isReturnObj(result)) {
-				return result
+				return result;
 			}
 		}
-		return result
-	})
+		return result;
+	});
 
 export const evalProgram = (stmts: readonly Stmt[], env: Environment) =>
 	evalStatements(stmts, env, undefined).pipe(
-		Effect.withSpan('eval.evalProgram'),
-	)
+		Effect.withSpan("eval.evalProgram"),
+	);
 
 export const evalBlockStatement = (
 	block: BlockStmt,
@@ -247,8 +251,8 @@ export const evalBlockStatement = (
 	ident: IdentExp | undefined,
 ) =>
 	evalStatements(block.statements, env, ident).pipe(
-		Effect.withSpan('eval.evalBlockStatement'),
-	)
+		Effect.withSpan("eval.evalBlockStatement"),
+	);
 
 export const evalInfixExpression =
 	(operator: InfixOperator) => (left: Obj) => (right: Obj) =>
@@ -259,30 +263,30 @@ export const evalInfixExpression =
 				isInfixObj(left) ||
 				isInfixObj(right)
 			) {
-				return createInfixObj(left, operator, right)
+				return createInfixObj(left, operator, right);
 			}
 			if (isIntegerObj(left) && isIntegerObj(right)) {
-				return evalIntegerInfixExpression(operator, left, right)
+				return evalIntegerInfixExpression(operator, left, right);
 			}
 			if (isStringObj(left) && isStringObj(right)) {
 				const plus = yield* Schema.decodeUnknown(
 					Schema.Literal(TokenType.PLUS),
-				)(operator)
-				return evalStringInfixExpression(plus, left, right)
+				)(operator);
+				return evalStringInfixExpression(plus, left, right);
 			}
 			if (operator === TokenType.EQ) {
-				return nativeBoolToObjectBool(left === right) // we do object equality I guess?
+				return nativeBoolToObjectBool(left === right); // we do object equality I guess?
 			}
 			if (operator === TokenType.NOT_EQ) {
-				return nativeBoolToObjectBool(left !== right)
+				return nativeBoolToObjectBool(left !== right);
 			}
 			return yield* new KennethEvalError({
 				message:
 					left._tag !== right._tag
 						? `type mismatch: ${left._tag} ${operator} ${right._tag}`
 						: `unknown operator: ${left._tag} ${operator} ${right._tag}`,
-			})
-		}).pipe(Effect.withSpan('eval.evalInfixExpression'))
+			});
+		}).pipe(Effect.withSpan("eval.evalInfixExpression"));
 
 const nativeToObj = (result: number | boolean | string) =>
 	Match.value(result).pipe(
@@ -290,13 +294,13 @@ const nativeToObj = (result: number | boolean | string) =>
 		Match.when(Match.number, (num) => createIntegerObj(num)),
 		Match.when(Match.string, (str) => createStringObj(str)),
 		Match.exhaustive,
-	)
+	);
 
 export const evalIntegerInfixExpression = (
 	operator: InfixOperator,
 	left: IntegerObj,
 	right: IntegerObj,
-) => nativeToObj(OPERATOR_TO_FUNCTION_MAP[operator](left.value, right.value))
+) => nativeToObj(OPERATOR_TO_FUNCTION_MAP[operator](left.value, right.value));
 
 export const evalStringInfixExpression = (
 	operator: typeof TokenType.PLUS,
@@ -305,7 +309,7 @@ export const evalStringInfixExpression = (
 ) =>
 	nativeToObj(
 		STRING_OPERATOR_TO_FUNCTION_MAP[operator](left.value, right.value),
-	)
+	);
 
 export const evalPrefixExpression =
 	(operator: PrefixOperator) => (right: Obj) =>
@@ -313,7 +317,7 @@ export const evalPrefixExpression =
 			Match.when(TokenType.BANG, () => evalBangOperatorExpression(right)),
 			Match.when(TokenType.MINUS, () =>
 				Match.value(right).pipe(
-					Match.tag('IntegerObj', (intObj) =>
+					Match.tag("IntegerObj", (intObj) =>
 						evalMinusPrefixOperatorExpression(intObj),
 					),
 					Match.orElse(
@@ -325,41 +329,41 @@ export const evalPrefixExpression =
 				),
 			),
 			Match.exhaustive,
-		)
+		);
 
 export const evalMinusPrefixOperatorExpression = (right: IntegerObj) =>
-	Effect.succeed(createIntegerObj(-right.value))
+	Effect.succeed(createIntegerObj(-right.value));
 
 export const evalBangOperatorExpression = (right: Obj) =>
 	Effect.succeed(
 		Match.value(right).pipe(
-			Match.tag('BooleanObj', (obj) => (obj.value ? FALSE : TRUE)),
-			Match.tag('NullObj', () => TRUE),
+			Match.tag("BooleanObj", (obj) => (obj.value ? FALSE : TRUE)),
+			Match.tag("NullObj", () => TRUE),
 			Match.orElse(() => FALSE),
 		),
-	).pipe(Effect.withSpan('eval.evalBangOperatorExpression'))
+	).pipe(Effect.withSpan("eval.evalBangOperatorExpression"));
 
 export type ProgramInterpretation = {
-	program: Program
-	evaluation: Obj
+	program: Program;
+	evaluation: Obj;
 	lexerStory: {
-		input: string
-		tokens: Token[]
-		pos1History: number[][]
-		pos2History: number[][]
-	}
-}
+		input: string;
+		tokens: Token[];
+		pos1History: number[][];
+		pos2History: number[][];
+	};
+};
 
-export class Evaluator extends Effect.Service<Evaluator>()('Evaluator', {
+export class Evaluator extends Effect.Service<Evaluator>()("Evaluator", {
 	effect: Effect.gen(function* () {
-		const parser = yield* Parser
+		const parser = yield* Parser;
 		const run = (input: string) =>
 			Effect.gen(function* () {
-				yield* parser.init(input)
-				const program = yield* parser.parseProgramOptimized
-				const env = createEnvironment()
-				return yield* nodeEvalMatch(env, undefined)(program)
-			}).pipe(Effect.withSpan('eval.run'))
+				yield* parser.init(input);
+				const program = yield* parser.parseProgramOptimized;
+				const env = createEnvironment();
+				return yield* nodeEvalMatch(env, undefined)(program);
+			}).pipe(Effect.withSpan("eval.run"));
 
 		const runAndInterpret = (
 			input: string,
@@ -369,24 +373,24 @@ export class Evaluator extends Effect.Service<Evaluator>()('Evaluator', {
 			never
 		> =>
 			Effect.gen(function* () {
-				yield* parser.init(input)
-				const program = yield* parser.parseProgram
-				const lexerStory = yield* parser.getLexerStory
-				const parserStory = yield* parser.getParserStory
-				const env = createEnvironment()
-				const evaluation = yield* nodeEvalMatch(env, undefined)(program)
+				yield* parser.init(input);
+				const program = yield* parser.parseProgram;
+				const lexerStory = yield* parser.getLexerStory;
+				const parserStory = yield* parser.getParserStory;
+				const env = createEnvironment();
+				const evaluation = yield* nodeEvalMatch(env, undefined)(program);
 				return {
 					program,
 					evaluation,
 					lexerStory,
 					parserStory,
-				}
-			})
+				};
+			});
 
 		return {
 			run,
 			runAndInterpret,
-		}
+		};
 	}),
 	dependencies: [Parser.Default],
 }) {}
