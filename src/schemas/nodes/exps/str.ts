@@ -1,12 +1,6 @@
 import { Schema } from "effect";
 import { type StringToken, stringTokenSchema } from "src/schemas/token/string";
 
-export type StrExpEncoded = {
-	readonly _tag: "StrExp";
-	readonly token: StringToken;
-	readonly value: string;
-};
-
 export type StrExp = {
 	readonly _tag: "StrExp";
 	readonly token: StringToken;

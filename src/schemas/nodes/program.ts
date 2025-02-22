@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 import { type Token, tokenSchema } from "../token/unions/all";
-import { type Stmt, type StmtEncoded, stmtSchema } from "./stmts/union";
+import { type Stmt, stmtSchema } from "./stmts/union";
 
 export type Program = {
 	readonly _tag: "Program";
@@ -11,6 +11,6 @@ export type Program = {
 export const Program = Schema.TaggedStruct("Program", {
 	token: tokenSchema,
 	statements: Schema.Array(
-		Schema.suspend((): Schema.Schema<Stmt, StmtEncoded> => stmtSchema),
+		Schema.suspend((): Schema.Schema<Stmt> => stmtSchema),
 	),
 });

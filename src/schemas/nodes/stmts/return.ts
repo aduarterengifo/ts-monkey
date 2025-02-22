@@ -1,12 +1,6 @@
 import { Schema } from "effect";
 import { type Token, tokenSchema } from "../../../schemas/token/unions/all";
-import { type Exp, type ExpEncoded, expSchema } from "../exps/union";
-
-export type ReturnStmtEncoded = {
-	readonly _tag: "ReturnStmt";
-	readonly token: Token;
-	readonly value: ExpEncoded;
-};
+import { type Exp, expSchema } from "../exps/union";
 
 export type ReturnStmt = {
 	readonly _tag: "ReturnStmt";
