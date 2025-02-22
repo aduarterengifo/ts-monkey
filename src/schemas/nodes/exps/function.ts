@@ -22,15 +22,4 @@ export class FuncExp
 		),
 		body: BlockStmt,
 	})
-	implements INode
-{
-	string() {
-		return `
-			${this.token.literal}
-			(
-			${this.parameters.map((param) => param.string()).join(", ")}
-			)
-			${this.body.string()}
-			`;
-	}
-}
+	implements INode {}

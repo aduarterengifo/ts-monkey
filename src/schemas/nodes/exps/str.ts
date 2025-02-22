@@ -13,12 +13,7 @@ export class StrExp
 		token: stringTokenSchema,
 		value: Schema.String,
 	})
-	implements INode
-{
-	string() {
-		return this.token.literal;
-	}
-}
+	implements INode {}
 
 export const StrExpEq = Schema.equivalence(StrExp);
 

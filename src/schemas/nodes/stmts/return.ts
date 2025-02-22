@@ -14,9 +14,4 @@ export class ReturnStmt
 		token: tokenSchema,
 		value: Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
 	})
-	implements INode
-{
-	string() {
-		return `${this.token.literal} ${this.value.string()};`;
-	}
-}
+	implements INode {}

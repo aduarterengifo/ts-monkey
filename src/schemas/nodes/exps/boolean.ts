@@ -9,12 +9,7 @@ export class BoolExp
 		token: tokenSchema,
 		value: Schema.Boolean,
 	})
-	implements INode
-{
-	string() {
-		return `${this.token.literal}`;
-	}
-}
+	implements INode {}
 
 export const BoolExpEq = Schema.equivalence(BoolExp);
 

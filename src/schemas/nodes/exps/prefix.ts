@@ -20,11 +20,4 @@ export class PrefixExp
 		operator: prefixOperatorSchema,
 		right: Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
 	})
-	implements INode
-{
-	// temp
-	string() {
-		const t: string = `(${this.operator}${this.right.string()})`;
-		return t;
-	}
-}
+	implements INode {}

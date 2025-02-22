@@ -22,13 +22,7 @@ export class InfixExp
 		left: Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
 		right: Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
 	})
-	implements INode
-{
-	string() {
-		const t: string = `(${this.left.string()} ${this.operator} ${this.right.string()})`;
-		return t;
-	}
-}
+	implements INode {}
 
 export const OpInfixExp = (op: InfixOperator) => (left: Exp, right: Exp) =>
 	new InfixExp({

@@ -18,10 +18,4 @@ export class CallExp
 			Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
 		),
 	})
-	implements INode
-{
-	string() {
-		const t: string = `${this.fn.string()}(${this.args.map((arg: Exp) => arg.string()).join(", ")})`;
-		return t;
-	}
-}
+	implements INode {}

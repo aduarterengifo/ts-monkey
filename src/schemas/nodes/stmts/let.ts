@@ -19,9 +19,4 @@ export class LetStmt
 		token: letTokenSchema,
 		value: Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
 	})
-	implements INode
-{
-	string() {
-		return `${this.token.literal} ${this.name.string()} = ${this.value.string()};`;
-	}
-}
+	implements INode {}

@@ -1,4 +1,4 @@
-import { tokenLiteral } from "@/schemas/nodes/union";
+import { nodeString, tokenLiteral } from "@/schemas/nodes/union";
 import { Effect } from "effect";
 import { KennethParseError } from "src/errors/kenneth/parse";
 import type { Exp } from "src/schemas/nodes/exps/union";
@@ -8,7 +8,7 @@ export const testIdentifier = (expression: Exp, value: string) =>
 	Effect.gen(function* () {
 		return yield* !isIdentExpression(expression)
 			? new KennethParseError({
-					message: `Expected expression to be IdentExpression got ${expression.string()}`,
+					message: `Expected expression to be IdentExpression got ${nodeString(expression)}`,
 				})
 			: expression.value !== value
 				? new KennethParseError({

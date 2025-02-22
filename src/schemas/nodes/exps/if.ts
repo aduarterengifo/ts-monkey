@@ -19,20 +19,4 @@ export class IfExp
 		consequence: BlockStmt,
 		alternative: Schema.optional(BlockStmt),
 	})
-	implements INode
-{
-	string() {
-		const res: string = `
-			if
-			${this.condition.string()}
-
-			${this.consequence.string()}
-			`;
-		return this.alternative
-			? `${res}
-				else
-				${this.alternative.string()}
-				`
-			: res;
-	}
-}
+	implements INode {}
