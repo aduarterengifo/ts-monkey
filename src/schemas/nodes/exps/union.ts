@@ -22,7 +22,7 @@ export type Exp =
 	| StrExp
 	| DiffExp;
 
-export const expSchema = Schema.suspend(
+export const Exp = Schema.suspend(
 	(): Schema.Schema<Exp> =>
 		Schema.Union(
 			BoolExp,

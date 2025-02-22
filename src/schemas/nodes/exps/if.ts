@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import { type IfToken, ifTokenSchema } from "src/schemas/token/if";
 import { BlockStmt } from "../stmts/block";
-import { type Exp, expSchema } from "./union";
+import { Exp } from "./union";
 
 export type IfExp = {
 	readonly _tag: "IfExp";
@@ -13,7 +13,7 @@ export type IfExp = {
 
 export const IfExp = Schema.TaggedStruct("IfExp", {
 	token: ifTokenSchema,
-	condition: Schema.suspend((): Schema.Schema<Exp> => expSchema),
+	condition: Schema.suspend((): Schema.Schema<Exp> => Exp),
 	consequence: BlockStmt,
 	alternative: Schema.optional(BlockStmt),
 });

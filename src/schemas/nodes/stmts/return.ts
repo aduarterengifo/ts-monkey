@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 import { type Token, tokenSchema } from "../../../schemas/token/unions/all";
-import { type Exp, expSchema } from "../exps/union";
+import { Exp } from "../exps/union";
 
 export type ReturnStmt = {
 	readonly _tag: "ReturnStmt";
@@ -10,5 +10,5 @@ export type ReturnStmt = {
 
 export const ReturnStmt = Schema.TaggedStruct("ReturnStmt", {
 	token: tokenSchema,
-	value: Schema.suspend((): Schema.Schema<Exp> => expSchema),
+	value: Schema.suspend((): Schema.Schema<Exp> => Exp),
 });

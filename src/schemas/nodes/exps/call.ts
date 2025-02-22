@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 import { type Token, tokenSchema } from "src/schemas/token/unions/all";
-import { type Exp, expSchema } from "./union";
+import { Exp } from "./union";
 
 export type CallExp = {
 	readonly _tag: "CallExp";
@@ -11,6 +11,6 @@ export type CallExp = {
 
 export const CallExp = Schema.TaggedStruct("CallExp", {
 	token: tokenSchema,
-	fn: Schema.suspend((): Schema.Schema<Exp> => expSchema),
-	args: Schema.Array(Schema.suspend((): Schema.Schema<Exp> => expSchema)),
+	fn: Schema.suspend((): Schema.Schema<Exp> => Exp),
+	args: Schema.Array(Schema.suspend((): Schema.Schema<Exp> => Exp)),
 });

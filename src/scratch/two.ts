@@ -6,7 +6,7 @@ import { ReturnStmt } from "src/schemas/nodes/stmts/return";
 import {
 	type Stmt,
 	isExpStmt,
-	stmtSchema,
+	Stmt,
 } from "src/schemas/nodes/stmts/union";
 
 const program = Effect.gen(function* () {
@@ -15,7 +15,7 @@ const program = Effect.gen(function* () {
 		token: { _tag: "let", literal: "let" },
 		value: istmt,
 	}) as Stmt;
-	yield* Console.log(Schema.decodeUnknownSync(stmtSchema)(rstmt));
+	yield* Console.log(Schema.decodeUnknownSync(Stmt)(rstmt));
 
 	if (isExpStmt(rstmt)) {
 		console.log(`${nodeString(rstmt)}`);

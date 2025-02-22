@@ -1,19 +1,15 @@
-import { Schema } from 'effect'
+import { Schema } from "effect";
 
 const fields = {
 	value: Schema.Number,
+};
+
+export interface IntegerObj extends Schema.Struct.Type<typeof fields> {
+	readonly _tag: "IntegerObj";
 }
 
-export interface IntObj extends Schema.Struct.Type<typeof fields> {
-	readonly _tag: 'IntegerObj'
-}
-
-export interface IntObjEncoded extends Schema.Struct.Type<typeof fields> {
-	readonly _tag: 'IntegerObj'
-}
-
-export const intObjSchema = Schema.TaggedStruct('IntegerObj', {
+export const IntegerObj = Schema.TaggedStruct("IntegerObj", {
 	...fields,
-})
+});
 
-export const intObjEq = Schema.equivalence(intObjSchema)
+export const intObjEq = Schema.equivalence(IntegerObj);

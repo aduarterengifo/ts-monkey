@@ -4,7 +4,6 @@ import type { ParseError } from "effect/ParseResult";
 import type { KennethParseError } from "src/errors/kenneth/parse";
 import type { InfixOperator } from "src/schemas/infix-operator";
 import type { IdentExp } from "src/schemas/nodes/exps/ident";
-import type { InfixExp } from "src/schemas/nodes/exps/infix";
 import type { BlockStmt } from "src/schemas/nodes/stmts/block";
 import type { Environment } from "./environment";
 

@@ -1,11 +1,11 @@
 import { Data, Match, Pretty, Schema } from "effect";
-import { type Exp, expSchema } from "./exps/union";
+import { Exp } from "./exps/union";
 import { Program } from "./program";
 
-import { type Stmt, stmtSchema } from "./stmts/union";
+import { Stmt } from "./stmts/union";
 
 export type KNode = Exp | Stmt | Program;
-export const kNodeSchema = Schema.Union(expSchema, stmtSchema, Program);
+export const kNodeSchema = Schema.Union(Exp, Stmt, Program);
 
 export const { $is: isKNode, $match: matchKnode } = Data.taggedEnum<KNode>();
 
