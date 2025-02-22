@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { tokenLiteral } from "@/schemas/nodes/union";
+import { nodeString, tokenLiteral } from "@/schemas/nodes/union";
 import {
 	Effect,
 	Layer,
@@ -123,7 +123,7 @@ const testSuites: {
 				],
 				fn: (expected: string) => (program: Program) =>
 					Effect.gen(function* () {
-						const actual = program.string();
+						const actual = nodeString(program);
 						yield* Effect.succeed(expect(actual).toBe(expected));
 					}),
 			},
@@ -227,7 +227,7 @@ const testSuites: {
 
 							expect(callExp.args.length).toBe(expected.args.length);
 							expected.args.forEach((expectedArg, i) => {
-								expect(callExp.args[i].string()).toBe(expectedArg);
+								expect(nodeString(callExp.args[i])).toBe(expectedArg);
 							});
 						}),
 			},
@@ -642,8 +642,8 @@ describe("eval", () => {
 			expect(isFunctionObj(evaluated)).toBe(true);
 			if (isFunctionObj(evaluated)) {
 				expect(evaluated.params.length).toBe(1);
-				expect(evaluated.params[0].string()).toBe("x");
-				expect(evaluated.body.string()).toBe("(x + 2)");
+				expect(nodeString(evaluated.params[0])).toBe("x");
+				expect(nodeString(evaluated.body)).toBe("(x + 2)");
 			}
 		}).pipe(
 			Logger.withMinimumLogLevel(LogLevel.Debug),

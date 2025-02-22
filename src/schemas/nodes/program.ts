@@ -16,9 +16,4 @@ export class Program
 			Schema.suspend((): Schema.Schema<Stmt, StmtEncoded> => stmtSchema),
 		),
 	})
-	implements INode
-{
-	string() {
-		return this.statements.map((statement) => statement.string()).join("");
-	}
-}
+	implements INode {}

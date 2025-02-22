@@ -10,12 +10,7 @@ export class IdentExp
 		token: identTokenSchema,
 		value: Schema.String,
 	})
-	implements INode
-{
-	string() {
-		return this.value;
-	}
-}
+	implements INode {}
 
 export const IdentExpEq = Schema.equivalence(IdentExp);
 

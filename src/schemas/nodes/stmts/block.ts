@@ -16,11 +16,4 @@ export class BlockStmt
 			Schema.suspend((): Schema.Schema<Stmt, StmtEncoded> => stmtSchema),
 		),
 	})
-	implements INode
-{
-	string() {
-		return this.statements
-			.map((stmt: Stmt): string => stmt.string())
-			.join("\n");
-	}
-}
+	implements INode {}

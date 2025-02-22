@@ -1,3 +1,1 @@
-export interface INode {
-	readonly string: () => string;
-}
+export type INode = {};

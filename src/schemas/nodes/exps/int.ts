@@ -13,12 +13,7 @@ export class IntExp
 		token: intTokenSchema,
 		value: Schema.Number,
 	})
-	implements INode
-{
-	string() {
-		return `${this.token.literal}`;
-	}
-}
+	implements INode {}
 
 export const IntExpEq = Schema.equivalence(IntExp);
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { tokenLiteral } from "@/schemas/nodes/union";
+import { nodeString, tokenLiteral } from "@/schemas/nodes/union";
 import { Effect, LogLevel, Logger, ManagedRuntime, Schema } from "effect";
 import { logDebug } from "effect/Effect";
 import type { ParseError } from "effect/ParseResult";
@@ -43,7 +43,7 @@ describe("parser", () => {
 			],
 		});
 
-		expect(program.string()).toBe("let myVar = anotherVar;");
+		expect(nodeString(program)).toBe("let myVar = anotherVar;");
 	});
 	test("integer literal expression", () => {
 		const input = "5;";
