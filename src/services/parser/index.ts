@@ -90,12 +90,12 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 			Effect.gen(function* () {
 				const identToken =
 					yield* Schema.decodeUnknown(identTokenSchema)(curToken);
-				return new IdentExp({ token: identToken, value: identToken.literal });
+				return IdentExp.make({ token: identToken, value: identToken.literal });
 			}).pipe(Effect.withSpan("parser.parseIdentifier"));
 
 		const parseIntegerLiteral = (curToken: IntToken) =>
 			Effect.succeed(
-				new IntExp({ token: curToken, value: Number(curToken.literal) }),
+				IntExp.make({ token: curToken, value: Number(curToken.literal) }),
 			).pipe(Effect.withSpan("parser.parseIntegerLiteral"));
 
 		const parseBooleanLiteral = (curToken: BoolToken) =>
@@ -133,7 +133,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 				yield* nextToken;
 			}
 
-			return new BlockStmt({ token: curToken, statements: stmts });
+			return BlockStmt.make({ token: curToken, statements: stmts });
 		});
 
 		const parseIfExpression = (curToken: IfToken) =>
@@ -157,7 +157,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 
 					alternative = yield* parseBlockStatement;
 				}
-				return new IfExp({
+				return IfExp.make({
 					token: curToken,
 					condition,
 					consequence,
@@ -176,7 +176,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 			const identToken = yield* Schema.decodeUnknown(identTokenSchema)(
 				yield* getCurToken,
 			);
-			const identExp = new IdentExp({
+			const identExp = IdentExp.make({
 				token: identToken,
 				value: identToken.literal,
 			});
@@ -188,7 +188,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 				const identToken = yield* Schema.decodeUnknown(identTokenSchema)(
 					yield* getCurToken,
 				);
-				const identExp = new IdentExp({
+				const identExp = IdentExp.make({
 					token: identToken,
 					value: identToken.literal,
 				});
@@ -206,31 +206,15 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 				const parameters = yield* parseFunctionParameters;
 				yield* expectPeek(TokenType.LBRACE);
 
-				return new FuncExp({
+				return FuncExp.make({
 					token: curToken,
 					parameters,
 					body: yield* parseBlockStatement,
 				});
 			});
 
-		const parseDiff = (curToken: DiffToken) =>
-			Effect.gen(function* () {
-				yield* expectPeek(TokenType.LPAREN);
-				const fn = yield* parseFunctionParameters;
-				yield* expectPeek(TokenType.LBRACE);
-
-				return new DiffExp({
-					token: curToken,
-					fn,
-				});
-			});
-
 		const parseStringLiteral = (curToken: StringToken) =>
-			Effect.gen(function* () {
-				return yield* Effect.succeed(
-					new StrExp({ token: curToken, value: curToken.literal }),
-				);
-			});
+			Effect.succeed(StrExp.make({ token: curToken, value: curToken.literal }));
 
 		const getPrefixParseFunction = (token: PrefixParseFnToken) =>
 			Effect.gen(function* () {
@@ -287,7 +271,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 			Effect.gen(function* () {
 				yield* nextToken;
 
-				const prefixExpression = new PrefixExp({
+				const prefixExpression = PrefixExp.make({
 					token: curToken,
 					operator: curToken.literal,
 					right: yield* parseExpression(PREFIX),
@@ -365,7 +349,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 				yield* getCurToken,
 			); // grosss
 
-			const identifier = new IdentExp({
+			const identifier = IdentExp.make({
 				token: identToken as IdentToken,
 				value: identToken.literal,
 			});
@@ -380,7 +364,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 				yield* nextToken;
 			}
 
-			return new LetStmt({ name: identifier, token: letToken, value });
+			return LetStmt.make({ name: identifier, token: letToken, value });
 		}).pipe(Effect.withSpan("parser.parseLetStatement"));
 
 		const parseReturnStatement = Effect.gen(function* () {
@@ -395,12 +379,12 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 				yield* nextToken;
 			}
 
-			return new ReturnStmt({ token: returnToken, value: returnValue });
+			return ReturnStmt.make({ token: returnToken, value: returnValue });
 		}).pipe(Effect.withSpan("parser.parseReturnStatement"));
 
 		const parseExpressionStatement = Effect.gen(function* () {
 			const curToken = yield* getCurToken;
-			const expStmt = new ExpStmt({
+			const expStmt = ExpStmt.make({
 				token: curToken,
 				expression: yield* parseExpression(LOWEST),
 			});
@@ -431,7 +415,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 				yield* nextToken;
 				curToken = yield* getCurToken;
 			}
-			const program = new Program({ token: curToken, statements });
+			const program = Program.make({ token: curToken, statements });
 			return program;
 		}).pipe(Effect.withSpan("parser.parseProgram"));
 
@@ -440,7 +424,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 			const statements = yield* Effect.all(
 				program.statements.map(constantFoldingOverStmt),
 			);
-			return new Program({ token: program.token, statements });
+			return Program.make({ token: program.token, statements });
 		}).pipe(Effect.withSpan("parser.parseProgramOptimized"));
 
 		const getPrecedence = (token: Token) =>
@@ -468,7 +452,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 					curToken.literal,
 				);
 
-				return new InfixExp({ token: curToken, left, operator, right });
+				return InfixExp.make({ token: curToken, left, operator, right });
 			});
 
 		const getParserStory = Effect.gen(function* () {

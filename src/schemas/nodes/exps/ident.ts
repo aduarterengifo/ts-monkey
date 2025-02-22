@@ -1,16 +1,14 @@
 import { Effect, Schema } from "effect";
 import { KennethParseError } from "../../../errors/kenneth/parse";
 import { identTokenSchema } from "../../../schemas/token/ident";
-import type { INode } from "../interfaces/internal-node";
-
 export type IdentExpEncoded = Schema.Schema.Encoded<typeof IdentExp>;
 
-export class IdentExp
-	extends Schema.TaggedClass<IdentExp>()("IdentExp", {
-		token: identTokenSchema,
-		value: Schema.String,
-	})
-	implements INode {}
+export const IdentExp = Schema.TaggedStruct("IdentExp", {
+	token: identTokenSchema,
+	value: Schema.String,
+});
+
+export type IdentExp = typeof IdentExp.Type;
 
 export const IdentExpEq = Schema.equivalence(IdentExp);
 
@@ -24,7 +22,7 @@ export const expectIdentEquivalence = (a: IdentExp, b: IdentExp) =>
 	});
 
 export const nativeToIdentExp = (value: string) =>
-	new IdentExp({
+	IdentExp.make({
 		token: {
 			_tag: "IDENT",
 			literal: value,

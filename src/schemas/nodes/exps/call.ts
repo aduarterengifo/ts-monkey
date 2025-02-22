@@ -12,8 +12,8 @@ export type CallExpEncoded = {
 export type CallExp = {
 	readonly _tag: "CallExp";
 	readonly token: Token;
-	readonly fn: ExpEncoded;
-	readonly args: readonly ExpEncoded[];
+	readonly fn: Exp;
+	readonly args: readonly Exp[];
 };
 
 export const CallExp = Schema.TaggedStruct("CallExp", {

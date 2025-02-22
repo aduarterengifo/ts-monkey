@@ -26,16 +26,16 @@ import { testStrExp } from "./utils/test-str-exp";
 
 describe("parser", () => {
 	test("string", () => {
-		const program = new Program({
+		const program = Program.make({
 			token: { _tag: TokenType.IDENT, literal: "myVar" },
 			statements: [
-				new LetStmt({
-					name: new IdentExp({
+				LetStmt.make({
+					name: IdentExp.make({
 						token: { _tag: TokenType.IDENT, literal: "myVar" },
 						value: "myVar",
 					}),
 					token: { _tag: TokenType.LET, literal: "let" },
-					value: new IdentExp({
+					value: IdentExp.make({
 						token: { _tag: TokenType.IDENT, literal: "anotherVar" },
 						value: "anotherVar",
 					}),

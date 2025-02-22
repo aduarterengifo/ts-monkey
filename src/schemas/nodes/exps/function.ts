@@ -3,7 +3,6 @@ import {
 	type FnToken,
 	fnTokenSchema,
 } from "src/schemas/token/function-literal";
-import type { INode } from "../interfaces/internal-node";
 import { BlockStmt, type BlockStmtEncoded } from "../stmts/block";
 import { IdentExp, type IdentExpEncoded } from "./ident";
 
@@ -14,12 +13,17 @@ export type FuncExpEncoded = {
 	readonly body: BlockStmtEncoded;
 };
 
-export class FuncExp
-	extends Schema.TaggedClass<FuncExp>()("FuncExp", {
-		token: fnTokenSchema,
-		parameters: Schema.Array(
-			Schema.suspend((): Schema.Schema<IdentExp, IdentExpEncoded> => IdentExp),
-		),
-		body: BlockStmt,
-	})
-	implements INode {}
+export type FuncExp = {
+	readonly _tag: "FuncExp";
+	readonly token: FnToken;
+	parameters: readonly IdentExp[];
+	readonly body: BlockStmt;
+};
+
+export const FuncExp = Schema.TaggedStruct("FuncExp", {
+	token: fnTokenSchema,
+	parameters: Schema.Array(
+		Schema.suspend((): Schema.Schema<IdentExp, IdentExpEncoded> => IdentExp),
+	),
+	body: BlockStmt,
+});

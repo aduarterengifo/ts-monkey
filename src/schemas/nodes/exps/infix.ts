@@ -4,7 +4,6 @@ import {
 	infixOperatorSchema,
 } from "src/schemas/infix-operator";
 import { type Token, tokenSchema } from "src/schemas/token/unions/all";
-import type { INode } from "../interfaces/internal-node";
 import { type Exp, type ExpEncoded, expSchema } from "./union";
 
 export type InfixExpEncoded = {
@@ -15,17 +14,23 @@ export type InfixExpEncoded = {
 	readonly right: ExpEncoded;
 };
 
-export class InfixExp
-	extends Schema.TaggedClass<InfixExp>()("InfixExp", {
-		token: tokenSchema,
-		operator: infixOperatorSchema,
-		left: Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
-		right: Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
-	})
-	implements INode {}
+export type InfixExp = {
+	readonly _tag: "InfixExp";
+	readonly token: Token;
+	readonly operator: InfixOperator;
+	readonly left: Exp;
+	readonly right: Exp;
+};
+
+export const InfixExp = Schema.TaggedStruct("InfixExp", {
+	token: tokenSchema,
+	operator: infixOperatorSchema,
+	left: Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
+	right: Schema.suspend((): Schema.Schema<Exp, ExpEncoded> => expSchema),
+});
 
 export const OpInfixExp = (op: InfixOperator) => (left: Exp, right: Exp) =>
-	new InfixExp({
+	InfixExp.make({
 		token: {
 			_tag: op,
 			literal: op,

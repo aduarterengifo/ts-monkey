@@ -1,16 +1,10 @@
-import type { IdentExp } from '../ident'
-import { InfixExp } from '../infix'
-import { nativeToIntExp } from '../int'
+import { TokenType } from "@/schemas/token-types/union";
+import type { IdentExp } from "../ident";
+import { OpInfixExp } from "../infix";
+import { nativeToIntExp } from "../int";
 
 export const newTerm = (coeff: number, x: IdentExp, power: number) =>
-	new InfixExp({
-		token: { _tag: '*', literal: '*' },
-		left: nativeToIntExp(coeff),
-		operator: '*',
-		right: new InfixExp({
-			token: { _tag: '*', literal: '*' },
-			left: x,
-			operator: '**',
-			right: nativeToIntExp(power),
-		}),
-	})
+	OpInfixExp(TokenType.ASTERISK)(
+		nativeToIntExp(coeff),
+		OpInfixExp(TokenType.EXPONENT)(x, nativeToIntExp(power)),
+	);
