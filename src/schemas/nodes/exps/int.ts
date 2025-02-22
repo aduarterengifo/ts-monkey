@@ -1,12 +1,6 @@
 import { Schema } from "effect";
 import { type IntToken, intTokenSchema } from "../../../schemas/token/int";
 
-export type IntExpEncoded = {
-	readonly _tag: "IntExp";
-	readonly token: IntToken;
-	readonly value: number;
-};
-
 export type IntExp = {
 	readonly _tag: "IntExp";
 	readonly token: IntToken;

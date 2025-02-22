@@ -3,15 +3,8 @@ import {
 	type FnToken,
 	fnTokenSchema,
 } from "src/schemas/token/function-literal";
-import { BlockStmt, type BlockStmtEncoded } from "../stmts/block";
-import { IdentExp, type IdentExpEncoded } from "./ident";
-
-export type FuncExpEncoded = {
-	readonly _tag: "FuncExp";
-	readonly token: FnToken;
-	parameters: readonly IdentExpEncoded[];
-	readonly body: BlockStmtEncoded;
-};
+import { BlockStmt } from "../stmts/block";
+import { IdentExp } from "./ident";
 
 export type FuncExp = {
 	readonly _tag: "FuncExp";
@@ -23,7 +16,7 @@ export type FuncExp = {
 export const FuncExp = Schema.TaggedStruct("FuncExp", {
 	token: fnTokenSchema,
 	parameters: Schema.Array(
-		Schema.suspend((): Schema.Schema<IdentExp, IdentExpEncoded> => IdentExp),
+		Schema.suspend((): Schema.Schema<IdentExp> => IdentExp),
 	),
 	body: BlockStmt,
 });

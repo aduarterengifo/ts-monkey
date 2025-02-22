@@ -1,7 +1,6 @@
 import { Effect, Schema } from "effect";
 import { KennethParseError } from "../../../errors/kenneth/parse";
 import { identTokenSchema } from "../../../schemas/token/ident";
-export type IdentExpEncoded = Schema.Schema.Encoded<typeof IdentExp>;
 
 export const IdentExp = Schema.TaggedStruct("IdentExp", {
 	token: identTokenSchema,

@@ -1,8 +1,6 @@
 import { Schema } from "effect";
 import { tokenSchema } from "src/schemas/token/unions/all";
 
-export type BoolExpEncoded = Schema.Schema.Encoded<typeof BoolExp>;
-
 export const BoolExp = Schema.TaggedStruct("BoolExp", {
 	token: tokenSchema,
 	value: Schema.Boolean,

@@ -1,14 +1,14 @@
 import { Data, Match, Schema } from "effect";
-import { BoolExp, type BoolExpEncoded, nativeToBoolExp } from "./boolean";
-import { CallExp, type CallExpEncoded } from "./call";
-import { DiffExp, type DiffExpEncoded } from "./diff";
-import { FuncExp, type FuncExpEncoded } from "./function";
-import { IdentExp, type IdentExpEncoded } from "./ident";
-import { IfExp, type IfExpEncoded } from "./if";
-import { InfixExp, type InfixExpEncoded } from "./infix";
-import { IntExp, type IntExpEncoded, nativeToIntExp } from "./int";
-import { PrefixExp, type PrefixExpEncoded } from "./prefix";
-import { StrExp, type StrExpEncoded, nativeToStrExp } from "./str";
+import { BoolExp, nativeToBoolExp } from "./boolean";
+import { CallExp } from "./call";
+import { DiffExp } from "./diff";
+import { FuncExp } from "./function";
+import { IdentExp } from "./ident";
+import { IfExp } from "./if";
+import { InfixExp } from "./infix";
+import { IntExp, nativeToIntExp } from "./int";
+import { PrefixExp } from "./prefix";
+import { StrExp, nativeToStrExp } from "./str";
 
 export type Exp =
 	| BoolExp
@@ -22,20 +22,8 @@ export type Exp =
 	| StrExp
 	| DiffExp;
 
-export type ExpEncoded =
-	| BoolExpEncoded
-	| CallExpEncoded
-	| FuncExpEncoded
-	| IdentExpEncoded
-	| IfExpEncoded
-	| InfixExpEncoded
-	| IntExpEncoded
-	| PrefixExpEncoded
-	| StrExpEncoded
-	| DiffExpEncoded;
-
 export const expSchema = Schema.suspend(
-	(): Schema.Schema<Exp, ExpEncoded> =>
+	(): Schema.Schema<Exp> =>
 		Schema.Union(
 			BoolExp,
 			CallExp,
