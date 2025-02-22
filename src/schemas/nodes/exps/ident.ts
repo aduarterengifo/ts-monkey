@@ -22,14 +22,9 @@ export class IdentExp
 
 export const IdentExpEq = Schema.equivalence(IdentExp)
 
-export const expectIdentEquivalence = (a: IdentExp, b: IdentExp) =>
-	Effect.gen(function* () {
-		return !IdentExpEq(a, b)
-			? yield* new KennethParseError({
+export const expectIdentEquivalence = (a: IdentExp, b: IdentExp) => Effect.fail(new KennethParseError({
 					message: 'we expected ident to equal x',
-				})
-			: undefined
-	})
+				})).pipe(Effect.unless(() => IdentExpEq(a, b)))
 
 export const nativeToIdentExp = (value: string) =>
 	new IdentExp({

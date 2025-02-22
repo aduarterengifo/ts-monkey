@@ -1,21 +1,17 @@
-import { Effect } from 'effect'
+import { expectIdentEquivalence, nativeToIdentExp } from '@/schemas/nodes/exps/ident'
+import { Effect, Match } from 'effect'
 import { KennethParseError } from 'src/errors/kenneth/parse'
 import type { Exp } from 'src/schemas/nodes/exps/union'
-import { isIdentExpression } from 'src/services/ast'
 
-export const testIdentifier = (expression: Exp, value: string) =>
-	Effect.gen(function* () {
-		return yield* !isIdentExpression(expression)
-			? new KennethParseError({
-					message: `Expected expression to be IdentExpression got ${expression.string()}`,
-				})
-			: expression.value !== value
-				? new KennethParseError({
-						message: `Expected identExpression.Value to be ${value}, got ${expression.value}`,
-					})
-				: expression.tokenLiteral() !== value
-					? new KennethParseError({
-							message: `Expected ident.TokenLiteral to be ${value}, got ${expression.tokenLiteral()}`,
-						})
-					: Effect.succeed(true)
-	})
+export const testIdentifier = (expression: Exp, value: string) => 
+	Match.value(expression).pipe(
+		Match.tag('IdentExp', (identExp) => 
+			expectIdentEquivalence(identExp, nativeToIdentExp(value))
+		),
+		Match.orElse(() => Effect.fail(new KennethParseError({
+					message: `Expected expression to be IdentExpression got ${expression.string()}`, // string should be replaced by pretty
+				}))) // doing this by hand sucksssss
+	)
+
+
+export 

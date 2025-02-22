@@ -3,12 +3,12 @@ import './App.css'
 import { Textarea } from '../components/ui/textarea'
 import { runAndInterpret } from '../programs/run-and-interpret'
 import { Match } from 'effect'
+import { prettyObj } from '@/schemas/objs/union'
 
 const PROMPT = '>>'
 
 
 function App() {
-  const [count, setCount] = useState(0)
   const [text, setText] = useState(PROMPT)
   const [instructions, setInstructions] = useState('')
   const [evaluations, setEvaluations] = useState<string[]>([])
@@ -36,7 +36,7 @@ function App() {
       console.log('instructions', instructions)
     const evaluated = Match.value(returnValue).pipe(
         Match.tag('ErrorObj', (errorObj) => {return errorObj.message}),
-        Match.orElse((r)=>{return r.evaluation.inspect()})
+        Match.orElse((r)=>{return prettyObj(r.evaluation)})
       )
 
     setEvaluations(evals => [...evals, evaluated])

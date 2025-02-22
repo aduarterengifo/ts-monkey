@@ -39,6 +39,7 @@ import { CallExp } from 'src/schemas/nodes/exps/call'
 import { PrefixExp } from 'src/schemas/nodes/exps/prefix'
 import { isErrorObj, isFunctionObj, isStringObj, Obj } from '@/schemas/objs/union'
 import { KennethParseError } from '@/errors/kenneth/parse'
+import { errorObjSchema } from '@/schemas/objs/error'
 
 type TestSuite = {
 	description: string
@@ -608,12 +609,12 @@ for (const { name, kind, suite } of testSuites) {
 						Effect.catchAll((error) => {
 							console.log('error', error)
 							if (error._tag === 'KennethEvalError') {
-								return Effect.succeed(createErrorObj(error.message)).pipe(
+								return Effect.succeed(errorObjSchema.make({message: error.message})).pipe(
 									Effect.tap(Effect.logDebug('blew up')),
 								)
 							}
 							if (error._tag === 'ParseError') {
-								return Effect.succeed(createErrorObj(error.message))
+								return Effect.succeed(errorObjSchema.make({message: error.message}))
 							}
 
 							return expect(true).toBe(false)
