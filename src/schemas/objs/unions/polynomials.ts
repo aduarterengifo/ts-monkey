@@ -26,8 +26,11 @@ export const newTerm = (coeff: number, x: IdentObj, power: number) =>
 		}),
 	});
 
+const diffBoth = (f: PolynomialObj, g: PolynomialObj, x: IdentExp) =>
+	Effect.all([diffPolynomial(f, x), diffPolynomial(g, x)]);
+
 export const quotientRule = (f: PolynomialObj, g: PolynomialObj, x: IdentExp) =>
-	Effect.all([diffPolynomial(f, x), diffPolynomial(g, x)]).pipe(
+	diffBoth(f, g, x).pipe(
 		Effect.flatMap(([df, dg]) =>
 			Effect.succeed(
 				InfixObj.make({
@@ -48,7 +51,7 @@ export const quotientRule = (f: PolynomialObj, g: PolynomialObj, x: IdentExp) =>
 	);
 
 export const productRule = (f: PolynomialObj, g: PolynomialObj, x: IdentExp) =>
-	Effect.all([diffPolynomial(f, x), diffPolynomial(g, x)]).pipe(
+	diffBoth(f, g, x).pipe(
 		Effect.flatMap(([df, dg]) =>
 			Effect.succeed(
 				InfixObj.make({
@@ -66,7 +69,7 @@ export const sumAndDifferenceRule = (
 	x: IdentExp,
 	operator: typeof TokenType.PLUS | typeof TokenType.MINUS,
 ) =>
-	Effect.all([diffPolynomial(f, x), diffPolynomial(g, x)]).pipe(
+	diffBoth(f, g, x).pipe(
 		Effect.flatMap(([df, dg]) =>
 			Effect.succeed(
 				InfixObj.make({

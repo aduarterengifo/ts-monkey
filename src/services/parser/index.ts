@@ -2,7 +2,6 @@ import { Effect, Match, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import { BoolExp } from "src/schemas/nodes/exps/boolean";
 import { CallExp } from "src/schemas/nodes/exps/call";
-import { DiffExp } from "src/schemas/nodes/exps/diff";
 import { FuncExp } from "src/schemas/nodes/exps/function";
 import { IdentExp } from "src/schemas/nodes/exps/ident";
 import { IfExp } from "src/schemas/nodes/exps/if";

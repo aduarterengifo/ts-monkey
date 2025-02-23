@@ -28,10 +28,13 @@ const tan = makeUnaryMathFunction(Math.tan);
 const ln = makeUnaryMathFunction(Math.log);
 const exp = makeUnaryMathFunction(Math.exp);
 
-const pi = (...args: Obj[]) =>
-	Effect.succeed(IntegerObj.make({ value: Math.PI })); // to get around not having decimals.
-const e = (...args: Obj[]) =>
-	Effect.succeed(IntegerObj.make({ value: Math.E })); // to get around not having decimals.
+const makeConstantFunction =
+	(value: number) =>
+	(...args: Obj[]) =>
+		Effect.succeed(IntegerObj.make({ value })); // to get around not having decimals.
+
+const pi = makeConstantFunction(Math.PI);
+const e = makeConstantFunction(Math.E);
 
 const diff = (...args: Obj[]) =>
 	Schema.decodeUnknown(
