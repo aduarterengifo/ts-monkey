@@ -52,34 +52,37 @@ const diff2 = (...args: Obj[]) =>
 	});
 
 export const builtins = {
-	len: BuiltInObj.make({
-		fn: (...args: Obj[]) =>
-			Effect.gen(function* () {
-				if (args.length !== 1) {
-					return yield* Effect.succeed(
-						ErrorObj.make({
-							message: `wrong number of arguments. got=${args.length}, want=1`,
-						}),
-					);
-				}
+	len: BuiltInObj.make({ fn: "len" }),
+	diff: BuiltInObj.make({ fn: "diff" }),
+} as const;
 
-				const firstArg = args[0];
-
-				return yield* Match.value(firstArg).pipe(
-					Match.tag("StringObj", (strObj) =>
-						Effect.succeed(IntegerObj.make({ value: strObj.value.length })),
-					),
-					Match.orElse(() =>
-						Effect.succeed(
-							ErrorObj.make({
-								message: `argument to "len" not supported, got ${firstArg._tag}`,
-							}),
-						),
-					),
+export const builtInFnMap = {
+	len: (...args: Obj[]) =>
+		Effect.gen(function* () {
+			if (args.length !== 1) {
+				return yield* Effect.succeed(
+					ErrorObj.make({
+						message: `wrong number of arguments. got=${args.length}, want=1`,
+					}),
 				);
-			}),
-	}),
-	diff: BuiltInObj.make({ fn: diff2 }),
+			}
+
+			const firstArg = args[0];
+
+			return yield* Match.value(firstArg).pipe(
+				Match.tag("StringObj", (strObj) =>
+					Effect.succeed(IntegerObj.make({ value: strObj.value.length })),
+				),
+				Match.orElse(() =>
+					Effect.succeed(
+						ErrorObj.make({
+							message: `argument to "len" not supported, got ${firstArg._tag}`,
+						}),
+					),
+				),
+			);
+		}),
+	diff: diff2,
 } as const;
 
 const builtinKeys = Object.keys(builtins) as (keyof typeof builtins)[]; // hack

@@ -1,9 +1,10 @@
+import { Environment } from "@/services/object/environment";
 import { Schema } from "effect";
 import { IdentExp } from "../nodes/exps/ident";
 import { BlockStmt } from "../nodes/stmts/block";
 
 const fields = {
-	env: Schema.Unknown,
+	env: Environment,
 };
 
 export interface FunctionObj extends Schema.Struct.Type<typeof fields> {
