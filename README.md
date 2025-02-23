@@ -13,8 +13,21 @@ adds extensions for symbolic differentiation.
 - [x] power rule
 - [x] product rule
 - [x] quotient rule
-- [ ] chain rule
+- [x] chain rule
 
 ## REPL 
 
 [repl](https://monkey.andres.duarterengifo.com)
+
+
+## TODO 
+
+- [ ] view local traces 
+- [ ] diff multi-statement functions 
+- [ ] graph functions 
+- [ ] trig derivatives
+  - [ ] integrate with chain rule
+- [ ] exp/ln derivatives 
+  - [ ] integrate with chain rule
+- [ ] partial derivatives 
+    -  [ ] pass ident as second arg. 
