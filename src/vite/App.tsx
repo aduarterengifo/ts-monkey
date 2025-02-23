@@ -4,6 +4,7 @@ import { objInspect } from "@/services/object";
 import { Match } from "effect";
 import { Textarea } from "../components/ui/textarea";
 import { runAndInterpret } from "../programs/run-and-interpret";
+import { examples } from "./examples";
 
 const PROMPT = ">>";
 
@@ -55,13 +56,20 @@ function App() {
 	};
 	return (
 		<div className="font-mono">
-			<div className="flex flex-col items-start pb-2 pl-2">ts-monkey repl</div>
+			<div className="flex flex-col items-start pb-2 pl-2 ">ts-monkey repl</div>
 			<Textarea
 				value={text}
 				onKeyDown={handleKeyDown}
 				onChange={handleChange}
 				className="resize-none w-[80ch] h-80"
 			/>
+			<div className="flex flex-col items-start">
+				{examples.map((str, i) => (
+					<div className="w-full" key={`example-${i}`}>
+						{str}
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }

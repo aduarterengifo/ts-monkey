@@ -1,6 +1,4 @@
-import { FunctionObj } from "@/schemas/objs/function";
 import { IntegerObj } from "@/schemas/objs/int";
-import type { Obj } from "@/schemas/objs/union";
 import {
 	type PolynomialObj,
 	powerRule,
@@ -11,13 +9,8 @@ import {
 import { Effect, Match, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import { KennethParseError } from "../../errors/kenneth/parse";
-import { FuncExp } from "../../schemas/nodes/exps/function";
 import type { IdentExp } from "../../schemas/nodes/exps/ident";
-import { polynomialExpSchema } from "../../schemas/nodes/exps/unions/int-ident-infix";
-import { BlockStmt } from "../../schemas/nodes/stmts/block";
-import { ExpStmt } from "../../schemas/nodes/stmts/exp";
 import { TokenType } from "../../schemas/token-types/union";
-import type { Environment } from "../object/environment";
 
 const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 	Match.value(exp).pipe(

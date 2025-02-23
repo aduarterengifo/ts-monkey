@@ -14,7 +14,8 @@
 		"test": "bun test",
 		"coverage": "bun test --coverage",
 		"repl": " bun src/services/cli.ts repl",
-		"dev": "vite"
+		"dev": "vite dev",
+		"build": "vite build"
 	},
 	"dependencies": {
 		"@biomejs/biome": "1.9.4",
