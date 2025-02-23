@@ -1,6 +1,8 @@
-import { IntegerObj } from "@/schemas/objs/int";
+import { IdentObj } from "@/schemas/objs/ident";
+import { IntegerObj, ONE } from "@/schemas/objs/int";
 import {
-	type PolynomialObj,
+	PolynomialObj,
+	constantRule,
 	powerRule,
 	productRule,
 	quotientRule,
@@ -9,72 +11,70 @@ import {
 import { Effect, Match, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import { KennethParseError } from "../../errors/kenneth/parse";
-import type { IdentExp } from "../../schemas/nodes/exps/ident";
+import {
+	type IdentExp,
+	expectIdentEquivalence,
+} from "../../schemas/nodes/exps/ident";
 import { TokenType } from "../../schemas/token-types/union";
 
 const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 	Match.value(exp).pipe(
-		Match.tag("IntegerObj", () =>
-			Effect.succeed(IntegerObj.make({ value: 0 })),
-		),
-		Match.tag("IdentObj", () => Effect.succeed(IntegerObj.make({ value: 1 }))),
+		Match.tag("IntegerObj", () => constantRule()),
+		Match.tag("IdentObj", () => Effect.succeed(powerRule(ONE, ONE, x))),
 		Match.tag("InfixObj", ({ left, operator, right }) =>
-			Effect.gen(function* () {
-				const op = yield* Schema.decodeUnknown(
-					Schema.Literal(TokenType.ASTERISK, TokenType.EXPONENT),
-				)(operator);
-				return yield* Match.value(op).pipe(
-					Match.when(TokenType.ASTERISK, () =>
-						Effect.gen(function* () {
-							const coeff = left as IntegerObj;
-
-							return yield* Match.value(right).pipe(
-								Match.tag("IdentObj", (identExp) =>
+			Schema.decodeUnknown(
+				Schema.Literal(TokenType.ASTERISK, TokenType.EXPONENT),
+			)(operator).pipe(
+				Effect.flatMap((operator) =>
+					Match.value(operator).pipe(
+						Match.when(TokenType.ASTERISK, () =>
+							Schema.decodeUnknown(IntegerObj)(left).pipe(
+								Effect.flatMap((coeff) =>
+									Match.value(right).pipe(
+										Match.tag("IdentObj", () => Effect.succeed(coeff)),
+										Match.tag(
+											"InfixObj",
+											({
+												left,
+												operator: secondOperator,
+												right: secondRight,
+											}) =>
+												Effect.all([
+													Schema.decodeUnknown(
+														Schema.Literal(TokenType.EXPONENT),
+													)(secondOperator),
+													Schema.decodeUnknown(IntegerObj)(secondRight),
+												]).pipe(
+													Effect.flatMap(([operator, power]) =>
+														Effect.succeed(powerRule(coeff, power, x)),
+													),
+												),
+										),
+										Match.orElse(() =>
+											Effect.fail(new KennethParseError({ message: "failed" })),
+										),
+									),
+								),
+							),
+						),
+						Match.when(TokenType.EXPONENT, () =>
+							Schema.decodeUnknown(IdentObj)(left).pipe(
+								Effect.flatMap(({ identExp }) =>
 									Effect.gen(function* () {
-										return yield* Effect.succeed(coeff);
+										yield* expectIdentEquivalence(identExp, x);
+
+										const integerObj =
+											yield* Schema.decodeUnknown(IntegerObj)(right);
+
+										return powerRule(ONE, integerObj, x);
 									}),
 								),
-								Match.tag(
-									"InfixObj",
-									({
-										left: secondLeft,
-										operator: secondOperator,
-										right: secondRight,
-									}) =>
-										Effect.gen(function* () {
-											yield* Schema.decodeUnknown(
-												Schema.Literal(TokenType.EXPONENT),
-											)(secondOperator);
-											//const secondLeftParsed = secondLeft as IdentObj
-											// const secondLeftParsed =
-											// yield* expectIdentEquivalence(secondLeftParsed, x)
-
-											const power =
-												yield* Schema.decodeUnknown(IntegerObj)(secondRight);
-
-											return powerRule(coeff, power, x);
-										}),
-								),
-								Match.orElse(() =>
-									Effect.fail(new KennethParseError({ message: "failed" })),
-								),
-							);
-						}),
+							),
+						),
+						Match.exhaustive,
 					),
-					Match.when(TokenType.EXPONENT, () =>
-						Effect.gen(function* () {
-							//const identExp = left as IdentObj
-
-							// yield* expectIdentEquivalence(identExp, x)
-
-							const integerObj = yield* Schema.decodeUnknown(IntegerObj)(right);
-
-							return powerRule(IntegerObj.make({ value: 1 }), integerObj, x);
-						}),
-					),
-					Match.exhaustive,
-				);
-			}),
+				),
+			),
 		),
 		Match.exhaustive,
 	);
@@ -84,15 +84,12 @@ export const diffPolynomial = (
 	x: IdentExp,
 ): Effect.Effect<PolynomialObj, ParseError | KennethParseError, never> =>
 	Match.value(obj).pipe(
-		Match.tag("IntegerObj", () => processTerm(obj, x)), // leaf
-		Match.tag("IdentObj", () => processTerm(obj, x)), // leaf
-		Match.tag("InfixObj", (infixObj) =>
-			Effect.gen(function* () {
-				const left = infixObj.left as PolynomialObj;
-
-				const right = infixObj.right as PolynomialObj;
-
-				const operator = yield* Schema.decodeUnknown(
+		Match.tag("IntegerObj", () => constantRule()), // leaf
+		Match.tag("IdentObj", () => Effect.succeed(powerRule(ONE, ONE, x))), // leaf
+		Match.tag("InfixObj", ({ left, operator, right }) =>
+			Effect.all([
+				Schema.decodeUnknown(PolynomialObj)(left),
+				Schema.decodeUnknown(
 					Schema.Literal(
 						TokenType.MINUS,
 						TokenType.PLUS,
@@ -100,55 +97,24 @@ export const diffPolynomial = (
 						TokenType.SLASH,
 						TokenType.EXPONENT,
 					),
-				)(infixObj.operator);
-
-				return yield* Match.value(operator).pipe(
-					Match.when(TokenType.ASTERISK, () =>
-						Match.value(obj).pipe(
-							Match.tag("InfixObj", () =>
-								Effect.gen(function* () {
-									if (
-										(left._tag === "InfixObj" &&
-											left.operator === TokenType.PLUS) ||
-										(right._tag === "InfixObj" &&
-											right.operator === TokenType.PLUS)
-									) {
-										return yield* productRule(left, right, x);
-									}
-									return yield* processTerm(obj, x); // leaf
-								}),
-							),
-							Match.orElse(() => processTerm(obj, x)), // leaf
+				)(operator),
+				Schema.decodeUnknown(PolynomialObj)(right),
+			]).pipe(
+				Effect.flatMap(([left, operator, right]) =>
+					Match.value(operator).pipe(
+						Match.when(TokenType.ASTERISK, () => productRule(left, right, x)),
+						Match.when(TokenType.SLASH, () => quotientRule(left, right, x)),
+						Match.when(TokenType.EXPONENT, () => processTerm(obj, x)), // left
+						Match.when(TokenType.PLUS, (plus) =>
+							sumAndDifferenceRule(left, right, x, plus),
 						),
-					),
-					Match.when(TokenType.SLASH, () =>
-						Match.value(obj).pipe(
-							Match.tag("InfixObj", () =>
-								Effect.gen(function* () {
-									if (
-										(left._tag === "InfixObj" &&
-											left.operator === TokenType.PLUS) ||
-										(right._tag === "InfixObj" &&
-											right.operator === TokenType.PLUS)
-									) {
-										return yield* quotientRule(left, right, x);
-									}
-									return yield* processTerm(obj, x); // leaf
-								}),
-							),
-							Match.orElse(() => processTerm(obj, x)), // leaf
+						Match.when(TokenType.MINUS, (minus) =>
+							sumAndDifferenceRule(left, right, x, minus),
 						),
+						Match.exhaustive,
 					),
-					Match.when(TokenType.EXPONENT, () => processTerm(obj, x)),
-					Match.when(TokenType.PLUS, (plus) =>
-						sumAndDifferenceRule(left, right, x, plus),
-					),
-					Match.when(TokenType.MINUS, (minus) =>
-						sumAndDifferenceRule(left, right, x, minus),
-					),
-					Match.exhaustive,
-				);
-			}),
+				),
+			),
 		),
 		Match.exhaustive,
 	);
