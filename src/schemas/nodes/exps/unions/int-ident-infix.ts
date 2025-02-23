@@ -1,13 +1,8 @@
-import { Schema } from 'effect'
-import { IntExp, type IntExpEncoded } from '../int'
-import { IdentExp, type IdentExpEncoded } from '../ident'
-import { InfixExp, type InfixExpEncoded } from '../infix'
+import { Schema } from "effect";
+import { IdentExp } from "../ident";
+import { InfixExp } from "../infix";
+import { IntExp } from "../int";
 
-export const polynomialExpSchema = Schema.Union(IntExp, IdentExp, InfixExp)
+export const polynomialExpSchema = Schema.Union(IntExp, IdentExp, InfixExp);
 
-export type PolynomialExp = typeof polynomialExpSchema.Type
-
-export type PolynomialExpEncoded =
-	| IntExpEncoded
-	| IdentExpEncoded
-	| InfixExpEncoded
+export type PolynomialExp = typeof polynomialExpSchema.Type;

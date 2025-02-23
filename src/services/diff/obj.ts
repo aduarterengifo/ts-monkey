@@ -12,7 +12,7 @@ import { Effect, Match, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import { KennethParseError } from "../../errors/kenneth/parse";
 import { FuncExp } from "../../schemas/nodes/exps/function";
-import { IdentExp } from "../../schemas/nodes/exps/ident";
+import type { IdentExp } from "../../schemas/nodes/exps/ident";
 import { polynomialExpSchema } from "../../schemas/nodes/exps/unions/int-ident-infix";
 import { BlockStmt } from "../../schemas/nodes/stmts/block";
 import { ExpStmt } from "../../schemas/nodes/stmts/exp";
@@ -159,73 +159,3 @@ export const diffPolynomial = (
 		),
 		Match.exhaustive,
 	);
-
-export const diff = (...args: Obj[]) =>
-	Effect.gen(function* () {
-		// A single argument of type function with a single ident argument.
-		// counter factually I can also accept a fn(fn: (x: number) -> number) | fn(x: number) later is status quo.
-		// either way the fact remains that args should be a single function.
-		const {
-			params,
-			body: { token, statements },
-			env,
-		} = (yield* Schema.decodeUnknown(
-			Schema.Tuple(
-				Schema.Struct({
-					params: Schema.Tuple(Schema.Union(IdentExp, FuncExp)),
-					body: BlockStmt,
-					env: Schema.Unknown,
-				}),
-			),
-		)(args))[0];
-
-		const { token: expStmtToken, expression } = (yield* Schema.decodeUnknown(
-			Schema.Tuple(ExpStmt),
-		)(statements))[0];
-
-		const exp = yield* Schema.decodeUnknown(polynomialExpSchema)(expression);
-
-		return yield* Match.value(params[0]).pipe(
-			Match.tag("IdentExp", (x) =>
-				Effect.gen(function* () {
-					return FunctionObj.make({
-						params: params as unknown as IdentExp[], // TODO: HACK
-						body: BlockStmt.make({
-							token,
-							statements: [
-								ExpStmt.make({
-									token: expStmtToken,
-									expression: yield* diffPolynomial(exp, x),
-								}),
-							],
-						}),
-						env: env as Environment,
-					});
-				}),
-			),
-			Match.tag("FuncExp", (g) =>
-				Effect.gen(function* () {
-					const { parameters: gParams } = g;
-					const x = (yield* Schema.decodeUnknown(Schema.Tuple(IdentExp))(
-						gParams,
-					))[0];
-					return FunctionObj.make({
-						params: params as unknown as IdentExp[], // TODO: HACK
-						body: BlockStmt.make({
-							token,
-							statements: [
-								ExpStmt.make({
-									token: expStmtToken,
-									expression: yield* diffPolynomial(exp, x),
-								}),
-							],
-						}),
-						env: env as Environment,
-					});
-
-					// chain rule
-				}),
-			),
-			Match.exhaustive,
-		);
-	});

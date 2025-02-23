@@ -2,15 +2,15 @@ import type { IdentExp } from "@/schemas/nodes/exps/ident";
 import { TokenType } from "@/schemas/token-types/union";
 import { diffPolynomial } from "@/services/diff/obj";
 import { Effect, Schema } from "effect";
-import { diff } from "effect/Differ";
 import { IdentObj } from "../ident";
-import { InfixObj, OpInfixObj } from "../infix";
+import { InfixObj, type InfixObjEncoded, OpInfixObj } from "../infix";
 import { IntegerObj } from "../int";
 
 export type PolynomialObj = IntegerObj | IdentObj | InfixObj;
+export type PolynomialObjEncoded = IntegerObj | IdentObj | InfixObjEncoded;
 
 export const PolynomialObj = Schema.suspend(
-	(): Schema.Schema<PolynomialObj> =>
+	(): Schema.Schema<PolynomialObj, PolynomialObjEncoded> =>
 		Schema.Union(IntegerObj, IdentObj, InfixObj),
 );
 

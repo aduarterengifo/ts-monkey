@@ -1,13 +1,10 @@
-import { Schema } from 'effect'
-import { BoolExp, type BoolExpEncoded } from '../boolean'
-import { IntExp, type IntExpEncoded } from '../int'
-import { StrExp, type StrExpEncoded } from '../str'
+import { Schema } from "effect";
+import { BoolExp } from "../boolean";
+import { IntExp } from "../int";
+import { StrExp } from "../str";
 
-export type ConstantExp = IntExp | StrExp | BoolExp
-
-export type ConstantExpEncoded = IntExpEncoded | StrExpEncoded | BoolExpEncoded
+export type ConstantExp = IntExp | StrExp | BoolExp;
 
 export const constantExpSchema = Schema.suspend(
-	(): Schema.Schema<ConstantExp, ConstantExpEncoded> =>
-		Schema.Union(IntExp, StrExp, BoolExp),
-)
+	(): Schema.Schema<ConstantExp> => Schema.Union(IntExp, StrExp, BoolExp),
+);
