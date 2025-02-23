@@ -18,7 +18,6 @@ import { LetStmt } from "src/schemas/nodes/stmts/let";
 import { ReturnStmt } from "src/schemas/nodes/stmts/return";
 import type { Stmt } from "src/schemas/nodes/stmts/union";
 import { TokenType } from "src/schemas/token-types/union";
-import type { DiffToken } from "src/schemas/token/diff";
 import type { Token } from "src/schemas/token/unions/all";
 import type { KennethParseError } from "../../errors/kenneth/parse";
 import { infixOperatorSchema } from "../../schemas/infix-operator";
