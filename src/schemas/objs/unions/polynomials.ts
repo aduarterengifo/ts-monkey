@@ -71,3 +71,5 @@ export const powerRule = (coeff: IntegerObj, power: IntegerObj, x: IdentExp) =>
 		IdentObj.make({ identExp: x }),
 		power.value - 1,
 	);
+
+export const constantRule = () => Effect.succeed(IntegerObj.make({ value: 0 }));

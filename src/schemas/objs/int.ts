@@ -13,3 +13,6 @@ export const IntegerObj = Schema.TaggedStruct("IntegerObj", {
 });
 
 export const intObjEq = Schema.equivalence(IntegerObj);
+
+export const ZERO = IntegerObj.make({ value: 0 });
+export const ONE = IntegerObj.make({ value: 1 });
