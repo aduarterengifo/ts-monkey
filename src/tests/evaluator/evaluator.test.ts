@@ -552,7 +552,6 @@ const testSuites: {
 				],
 				fn: (expected: number) => (evaluated: Obj) =>
 					Effect.gen(function* () {
-						yield* logDebug("evaluated", evaluated);
 						yield* testIntegerObject(evaluated, expected);
 					}),
 			},
@@ -574,6 +573,38 @@ const testSuites: {
 					Effect.gen(function* () {
 						yield* testIntegerObject(evaluated, expected);
 					}),
+			},
+			{
+				description: "pi",
+				tests: [["pi()", Math.PI]],
+				fn: (expected: number) => (evaluated: Obj) =>
+					testIntegerObject(evaluated, expected),
+			},
+			{
+				description: "trig",
+				tests: [
+					["sin(0)", Math.sin(0)],
+					["sin(pi() / 2)", Math.sin(Math.PI / 2)],
+					["cos(0)", Math.cos(0)],
+					["cos(pi() / 2)", Math.cos(Math.PI / 2)],
+					["tan(0)", Math.tan(0)],
+					["tan(pi() / 4)", Math.tan(Math.PI / 4)],
+				],
+				fn: (expected: number) => (evaluated: Obj) =>
+					testIntegerObject(evaluated, expected),
+			},
+			{
+				description: "log and exp",
+				tests: [
+					["ln(0)", Math.log(0)],
+					["ln(1)", Math.log(1)],
+					["ln(e())", Math.log(Math.E)],
+					["exp(e())", Math.exp(Math.E)],
+					["exp(1)", Math.exp(1)],
+					["ln(exp(3))", Math.log(Math.exp(3))],
+				],
+				fn: (expected: number) => (evaluated: Obj) =>
+					testIntegerObject(evaluated, expected),
 			},
 			// {
 			// 	description: 'env',
