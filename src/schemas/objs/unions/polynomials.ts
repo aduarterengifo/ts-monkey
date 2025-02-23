@@ -1,7 +1,8 @@
 import type { IdentExp } from "@/schemas/nodes/exps/ident";
 import { TokenType } from "@/schemas/token-types/union";
 import { diffPolynomial } from "@/services/diff/obj";
-import { Effect, Schema } from "effect";
+import { Effect, Match, Schema } from "effect";
+import type { ParseError } from "effect/ParseResult";
 import { IdentObj } from "../ident";
 import { InfixObj, type InfixObjEncoded, OpInfixObj } from "../infix";
 import { IntegerObj } from "../int";
@@ -73,3 +74,55 @@ export const powerRule = (coeff: IntegerObj, power: IntegerObj, x: IdentExp) =>
 	);
 
 export const constantRule = () => Effect.succeed(IntegerObj.make({ value: 0 }));
+
+export const recursivelySubstitute = (
+	f: PolynomialObj,
+	g: PolynomialObj,
+	x: IdentExp,
+): Effect.Effect<PolynomialObj, ParseError, never> =>
+	Match.value(f).pipe(
+		Match.tag("IdentObj", () => Effect.succeed(g)),
+		Match.tag("IntegerObj", (intObj) => Effect.succeed(intObj)),
+		Match.tag("InfixObj", ({ left, operator, right }) =>
+			Effect.all([
+				Schema.decodeUnknown(PolynomialObj)(left),
+				Schema.decodeUnknown(PolynomialObj)(right),
+			]).pipe(
+				Effect.flatMap(([left, right]) =>
+					Effect.all([
+						recursivelySubstitute(left, g, x),
+						recursivelySubstitute(right, g, x),
+					]).pipe(
+						Effect.flatMap(([left, right]) =>
+							Effect.succeed(
+								InfixObj.make({
+									left,
+									operator,
+									right,
+								}),
+							),
+						),
+					),
+				),
+			),
+		),
+		Match.exhaustive,
+	);
+
+export const chainRule = (f: PolynomialObj, g: PolynomialObj, x: IdentExp) =>
+	Effect.all([diffPolynomial(f, x), diffPolynomial(g, x)]).pipe(
+		Effect.tap(([f, g]) => Effect.logDebug("f", f, "g", g)),
+		Effect.flatMap(([left, right]) =>
+			recursivelySubstitute(left, g, x).pipe(
+				Effect.flatMap((left) =>
+					Effect.succeed(
+						InfixObj.make({
+							left,
+							operator: TokenType.ASTERISK,
+							right,
+						}),
+					),
+				),
+			),
+		),
+	);

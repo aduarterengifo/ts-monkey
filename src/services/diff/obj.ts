@@ -1,7 +1,9 @@
 import { IdentObj } from "@/schemas/objs/ident";
+import { InfixObj } from "@/schemas/objs/infix";
 import { IntegerObj, ONE } from "@/schemas/objs/int";
 import {
 	PolynomialObj,
+	chainRule,
 	constantRule,
 	powerRule,
 	productRule,
@@ -104,7 +106,22 @@ export const diffPolynomial = (
 					Match.value(operator).pipe(
 						Match.when(TokenType.ASTERISK, () => productRule(left, right, x)),
 						Match.when(TokenType.SLASH, () => quotientRule(left, right, x)),
-						Match.when(TokenType.EXPONENT, () => processTerm(obj, x)), // left
+						Match.when(TokenType.EXPONENT, (operator) =>
+							Match.value(left).pipe(
+								Match.tag("InfixObj", () =>
+									chainRule(
+										InfixObj.make({
+											left: IdentObj.make({ identExp: x }),
+											operator,
+											right,
+										}),
+										left,
+										x,
+									),
+								),
+								Match.orElse(() => processTerm(obj, x)),
+							),
+						),
 						Match.when(TokenType.PLUS, (plus) =>
 							sumAndDifferenceRule(left, right, x, plus),
 						),
