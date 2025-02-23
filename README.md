@@ -1,10 +1,8 @@
-# ts-monkey
+# effect-monkey
 
-Typescript implementation of monkey interpreter from [Writing An Interpreter In Go](https://interpreterbook.com)
+[effect](https://effect.website) implementation of monkey interpreter from [Writing An Interpreter In Go](https://interpreterbook.com)
 
-uses [effect](https://effect.website)
-
-adds extensions for symbolic differentiation.
+with extensions for symbolic differentiation.
 
 ## Symbolic Differentiation 
 
