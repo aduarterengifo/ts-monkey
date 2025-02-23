@@ -39,7 +39,7 @@ import {
 } from "../object";
 import { builtInFnMap } from "../object/builtins";
 import {
-	type Environment,
+	Environment,
 	createEnvironment,
 	get,
 	set,
@@ -50,51 +50,49 @@ import {
 	STRING_OPERATOR_TO_FUNCTION_MAP,
 } from "./constants";
 
-// TODO move diff to ENV!
-
-const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
+const nodeEvalMatch = (env: Environment) =>
 	matchKnode({
 		Program: ({ statements }) =>
 			evalProgram(statements, env).pipe(Effect.map(unwrapReturnvalue)),
 		IdentExp: (ident) =>
-			identExp && IdentExpEq(identExp, ident)
+			env.idents.some((id) => IdentExpEq(id, ident))
 				? Effect.succeed(IdentObj.make({ identExp: ident }))
 				: evalIdentExpression(ident, env),
 		LetStmt: ({ value, name }) =>
 			Effect.gen(function* () {
-				const val = yield* Eval(value)(env, identExp);
+				const val = yield* Eval(value)(env);
 				set(env)(name.value, val);
 				return NULL;
 			}),
 		ReturnStmt: ({ value }) =>
-			Eval(value)(env, identExp).pipe(
+			Eval(value)(env).pipe(
 				Effect.map((obj) => ReturnObj.make({ value: obj })),
 			),
-		ExpStmt: ({ expression }) => Eval(expression)(env, identExp),
+		ExpStmt: ({ expression }) => Eval(expression)(env),
 		IntExp: ({ value }) => Effect.succeed(IntegerObj.make({ value })),
 		PrefixExp: ({ operator, right }) =>
 			Effect.gen(function* () {
-				const r = yield* Eval(right)(env, identExp);
+				const r = yield* Eval(right)(env);
 				return yield* evalPrefixExpression(operator)(r);
 			}),
 		InfixExp: ({ left, operator, right }) =>
-			Effect.all([Eval(left)(env, identExp), Eval(right)(env, identExp)]).pipe(
+			Effect.all([Eval(left)(env), Eval(right)(env)]).pipe(
 				Effect.flatMap(([leftVal, rightVal]) =>
 					evalInfixExpression(operator)(leftVal)(rightVal),
 				),
 			),
 		BoolExp: ({ value }) => Effect.succeed(nativeBoolToObjectBool(value)),
-		IfExp: (ie) => evalIfExpression(ie, env, identExp),
-		BlockStmt: (stmt) => evalBlockStatement(stmt, env, identExp),
+		IfExp: (ie) => evalIfExpression(ie, env),
+		BlockStmt: (stmt) => evalBlockStatement(stmt, env),
 		FuncExp: ({ parameters, body }) =>
 			Effect.succeed(FunctionObj.make({ params: parameters, body, env })),
 		CallExp: ({ fn, args }) =>
 			Effect.gen(function* () {
-				const fnEval = yield* Eval(fn)(env, identExp);
-				const argsEval = yield* evalExpressions(args, env, identExp);
+				const fnEval = yield* Eval(fn)(env);
+				const argsEval = yield* evalExpressions(args, env);
 
 				return yield* isFunctionObj(fnEval) || isBuiltInObj(fnEval)
-					? applyFunction(fnEval, identExp)(argsEval)
+					? applyFunction(fnEval)(argsEval)
 					: new KennethEvalError({ message: `not a function: ${fnEval._tag}` });
 			}),
 		StrExp: ({ value }) => Effect.succeed(StringObj.make({ value })),
@@ -105,20 +103,24 @@ export const Eval =
 	(node: KNode) =>
 	(
 		env: Environment,
-		identExp: IdentExp | undefined,
 	): Effect.Effect<
 		Obj,
 		KennethEvalError | ParseError | KennethParseError,
 		never
 	> =>
-		nodeEvalMatch(env, identExp)(node).pipe(Effect.withSpan("eval.Eval"));
+		nodeEvalMatch(env)(node).pipe(Effect.withSpan("eval.Eval"));
 
 export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 	Effect.gen(function* () {
 		// yield* logDebug('evalDiff')
 		// this is during running this function. the diff function to be sure! so it will return a number
 		// NEED to do a soft eval of all the expressions here.
-		const softEval = yield* Eval(diffExp.exp)(env, diffExp.params[0]).pipe(
+		const newEnv = Environment.make({
+			store: env.store,
+			outer: env.outer,
+			idents: [...env.idents, ...diffExp.params],
+		});
+		const softEval = yield* Eval(diffExp.exp)(newEnv).pipe(
 			Effect.flatMap(Schema.decodeUnknown(PolynomialObj)),
 		);
 
@@ -156,23 +158,21 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 		// yield* logDebug('exp', expResult)
 		// yield* logDebug('--------------------------')
 
-		return yield* Eval(expResult)(env, undefined);
+		return yield* Eval(expResult)(env);
 	});
 
-export const applyFunction =
-	(fn: FunctionObj | BuiltInObj, ident: IdentExp | undefined) =>
-	(args: Obj[]) =>
-		Match.value(fn).pipe(
-			Match.tag("BuiltInObj", (fn) => builtInFnMap[fn.fn](...args)),
-			Match.tag("FunctionObj", (fn) =>
-				extendFunctionEnv(fn, args).pipe(
-					Effect.flatMap((env) => Eval(fn.body)(env, ident)),
-					Effect.map(unwrapReturnvalue),
-				),
+export const applyFunction = (fn: FunctionObj | BuiltInObj) => (args: Obj[]) =>
+	Match.value(fn).pipe(
+		Match.tag("BuiltInObj", (fn) => builtInFnMap[fn.fn](...args)),
+		Match.tag("FunctionObj", (fn) =>
+			extendFunctionEnv(fn, args).pipe(
+				Effect.flatMap((env) => Eval(fn.body)(env)),
+				Effect.map(unwrapReturnvalue),
 			),
-			Match.exhaustive,
-			Effect.withSpan("eval.applyFunction"),
-		);
+		),
+		Match.exhaustive,
+		Effect.withSpan("eval.applyFunction"),
+	);
 
 export const extendFunctionEnv = (fn: FunctionObj, args: Obj[]) =>
 	Effect.gen(function* () {
@@ -186,31 +186,21 @@ export const extendFunctionEnv = (fn: FunctionObj, args: Obj[]) =>
 export const unwrapReturnvalue = (obj: Obj) =>
 	isReturnObj(obj) ? obj.value : obj;
 
-export const evalExpressions = (
-	exps: readonly Exp[],
-	env: Environment,
-	ident: IdentExp | undefined,
-) =>
-	Effect.all(exps.map((exp) => Eval(exp)(env, ident))).pipe(
+export const evalExpressions = (exps: readonly Exp[], env: Environment) =>
+	Effect.all(exps.map((exp) => Eval(exp)(env))).pipe(
 		Effect.withSpan("eval.evalExpressions"),
 	);
 
 export const evalIdentExpression = (ident: IdentExp, env: Environment) =>
 	get(env)(ident.value).pipe(Effect.withSpan("eval.evalIdentExpression"));
 
-export const evalIfExpression = (
-	ie: IfExp,
-	env: Environment,
-	ident: IdentExp | undefined,
-) =>
+export const evalIfExpression = (ie: IfExp, env: Environment) =>
 	Effect.gen(function* () {
-		const condition = yield* Eval(ie.condition)(env, ident).pipe(
-			Effect.map(isTruthy),
-		);
+		const condition = yield* Eval(ie.condition)(env).pipe(Effect.map(isTruthy));
 		return condition
-			? yield* Eval(ie.consequence)(env, ident)
+			? yield* Eval(ie.consequence)(env)
 			: ie.alternative
-				? yield* Eval(ie.alternative)(env, ident)
+				? yield* Eval(ie.alternative)(env)
 				: NULL;
 	}).pipe(Effect.withSpan("eval.evalIfExpression"));
 
@@ -221,15 +211,11 @@ export const isTruthy = (obj: Obj) =>
 		Match.orElse(() => true),
 	);
 
-const evalStatements = (
-	stmts: readonly Stmt[],
-	env: Environment,
-	ident: IdentExp | undefined,
-) =>
+const evalStatements = (stmts: readonly Stmt[], env: Environment) =>
 	Effect.gen(function* () {
 		let result: Obj = NULL;
 		for (const stmt of stmts) {
-			result = yield* Eval(stmt)(env, ident);
+			result = yield* Eval(stmt)(env);
 			if (isReturnObj(result)) {
 				return result;
 			}
@@ -238,16 +224,10 @@ const evalStatements = (
 	});
 
 export const evalProgram = (stmts: readonly Stmt[], env: Environment) =>
-	evalStatements(stmts, env, undefined).pipe(
-		Effect.withSpan("eval.evalProgram"),
-	);
+	evalStatements(stmts, env).pipe(Effect.withSpan("eval.evalProgram"));
 
-export const evalBlockStatement = (
-	block: BlockStmt,
-	env: Environment,
-	ident: IdentExp | undefined,
-) =>
-	evalStatements(block.statements, env, ident).pipe(
+export const evalBlockStatement = (block: BlockStmt, env: Environment) =>
+	evalStatements(block.statements, env).pipe(
 		Effect.withSpan("eval.evalBlockStatement"),
 	);
 
@@ -359,7 +339,7 @@ export class Evaluator extends Effect.Service<Evaluator>()("Evaluator", {
 				yield* parser.init(input);
 				const program = yield* parser.parseProgramOptimized;
 				const env = createEnvironment();
-				return yield* nodeEvalMatch(env, undefined)(program);
+				return yield* nodeEvalMatch(env)(program);
 			}).pipe(Effect.withSpan("eval.run"));
 
 		const runAndInterpret = (
@@ -375,7 +355,7 @@ export class Evaluator extends Effect.Service<Evaluator>()("Evaluator", {
 				const lexerStory = yield* parser.getLexerStory;
 				const parserStory = yield* parser.getParserStory;
 				const env = createEnvironment();
-				const evaluation = yield* nodeEvalMatch(env, undefined)(program);
+				const evaluation = yield* nodeEvalMatch(env)(program);
 				return {
 					program,
 					evaluation,

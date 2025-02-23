@@ -11,6 +11,7 @@ import {
 	Match,
 	Schema,
 } from "effect";
+import { logDebug } from "effect/Effect";
 import { CallExp } from "src/schemas/nodes/exps/call";
 import { FuncExp } from "src/schemas/nodes/exps/function";
 import { PrefixExp } from "src/schemas/nodes/exps/prefix";
@@ -539,6 +540,19 @@ const testSuites: {
 				],
 				fn: (expected: number) => (evaluated: Obj) =>
 					Effect.gen(function* () {
+						yield* testIntegerObject(evaluated, expected);
+					}),
+			},
+			{
+				description: "chain rule",
+				tests: [
+					// ["let g = fn(y) { y ** 3 }; diff(fn (x) {  2 * g(x) + x })", 10],
+					["diff(fn (x) { (3 * x ** 2 + 5 * x) ** 4 })(3)", 6816096],
+					["diff(fn (x) { 1 / (2 * x + 3) })(3)", -2 / 81],
+				],
+				fn: (expected: number) => (evaluated: Obj) =>
+					Effect.gen(function* () {
+						yield* logDebug("evaluated", evaluated);
 						yield* testIntegerObject(evaluated, expected);
 					}),
 			},

@@ -24,6 +24,7 @@
         "effect": "3.12.7",
         "eval": "0.1.8",
         "lucide-react": "^0.475.0",
+        "nerdamer-prime": "^1.2.4",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "tailwind-merge": "^3.0.1",
@@ -986,6 +987,8 @@
     "natural-compare": ["natural-compare@1.4.0", "", {}, "sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw=="],
 
     "natural-compare-lite": ["natural-compare-lite@1.4.0", "", {}, "sha512-Tj+HTDSJJKaZnfiuw+iaF9skdPpTo2GtEly5JHnWV/hfv2Qj/9RKsGISQtLh2ox3l5EAGw487hnBee0sIJ6v2g=="],
+
+    "nerdamer-prime": ["nerdamer-prime@1.2.4", "", {}, "sha512-oaGnI7GUTj3T2k2PkeGf/694uLY9pYwFSOkn/5aTuz1RXdJeD6hN0+2csKagB65H6R8J1Zb7UlPq7zEzQ2dumw=="],
 
     "node-addon-api": ["node-addon-api@7.1.1", "", {}, "sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ=="],
 

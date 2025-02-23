@@ -225,7 +225,6 @@ describe("parser", () => {
 
 		const program = (expStmt: ExpStmt) =>
 			Effect.gen(function* () {
-				yield* logDebug("expStmt", expStmt);
 				const intExp = yield* Schema.decodeUnknown(IntExp)(expStmt.expression);
 
 				yield* testIntExp(intExp, 15);

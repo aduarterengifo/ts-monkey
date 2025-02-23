@@ -1,3 +1,4 @@
+import { IdentExp } from "@/schemas/nodes/exps/ident";
 import { Obj, type ObjEncoded } from "@/schemas/objs/union";
 import { Effect, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
@@ -24,15 +25,18 @@ export const set = (env: Environment) => (key: string, value: Obj) => {
 export interface Environment {
 	readonly outer: Environment | undefined;
 	readonly store: Map<string, Obj>;
+	readonly idents: readonly IdentExp[];
 }
 
 export interface EnvironmentEncoded {
 	readonly outer: EnvironmentEncoded | undefined;
 	readonly store: readonly (readonly [string, ObjEncoded])[];
+	readonly idents: readonly IdentExp[];
 }
 
 export const Environment = Schema.Struct({
 	store: Schema.Map({ key: Schema.String, value: Obj }),
+	idents: Schema.Array(IdentExp),
 	outer: Schema.Union(
 		Schema.suspend(
 			(): Schema.Schema<Environment, EnvironmentEncoded> => Environment,
@@ -45,6 +49,7 @@ export const createEnvironment = (outer?: Environment | undefined) =>
 	Environment.make({
 		store: new Map<string, Obj>(),
 		outer,
+		idents: [],
 	});
 
 export const printStore = (env: Environment): string => {

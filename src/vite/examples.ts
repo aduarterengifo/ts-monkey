@@ -22,4 +22,6 @@ export const examples = [
 	[
 		"diff(fn(x) { (x + 2 * x ** 3) / (x + 1) + (x + 3 * x ** 3) / (x + 1)  })(3)",
 	],
+	["diff(fn (x) { (3 * x ** 2 + 5 * x) ** 4 })(3)"],
+	["diff(fn (x) { 1 / (2 * x + 3) })(3)"],
 ];
