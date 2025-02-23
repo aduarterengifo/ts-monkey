@@ -1,4 +1,4 @@
-import { Obj } from "@/schemas/objs/union";
+import { Obj, type ObjEncoded } from "@/schemas/objs/union";
 import { Effect, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import { objInspect } from ".";
@@ -28,7 +28,7 @@ export interface Environment {
 
 export interface EnvironmentEncoded {
 	readonly outer: EnvironmentEncoded | undefined;
-	readonly store: readonly (readonly [string, Obj])[];
+	readonly store: readonly (readonly [string, ObjEncoded])[];
 }
 
 export const Environment = Schema.Struct({
