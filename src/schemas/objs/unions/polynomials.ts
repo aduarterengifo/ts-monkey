@@ -27,30 +27,38 @@ export const newTerm = (coeff: number, x: IdentObj, power: number) =>
 	});
 
 export const quotientRule = (f: PolynomialObj, g: PolynomialObj, x: IdentExp) =>
-	Effect.gen(function* () {
-		return InfixObj.make({
-			left: InfixObj.make({
-				left: OpInfixObj(TokenType.ASTERISK)(yield* diffPolynomial(f, x), g),
-				operator: TokenType.MINUS,
-				right: OpInfixObj(TokenType.ASTERISK)(f, yield* diffPolynomial(g, x)),
-			}),
-			operator: TokenType.SLASH,
-			right: InfixObj.make({
-				left: g,
-				operator: TokenType.EXPONENT,
-				right: IntegerObj.make({ value: 2 }),
-			}),
-		});
-	});
+	Effect.all([diffPolynomial(f, x), diffPolynomial(g, x)]).pipe(
+		Effect.flatMap(([df, dg]) =>
+			Effect.succeed(
+				InfixObj.make({
+					left: InfixObj.make({
+						left: OpInfixObj(TokenType.ASTERISK)(df, g),
+						operator: TokenType.MINUS,
+						right: OpInfixObj(TokenType.ASTERISK)(f, dg),
+					}),
+					operator: TokenType.SLASH,
+					right: InfixObj.make({
+						left: g,
+						operator: TokenType.EXPONENT,
+						right: IntegerObj.make({ value: 2 }),
+					}),
+				}),
+			),
+		),
+	);
 
 export const productRule = (f: PolynomialObj, g: PolynomialObj, x: IdentExp) =>
-	Effect.gen(function* () {
-		return InfixObj.make({
-			left: OpInfixObj(TokenType.ASTERISK)(yield* diffPolynomial(f, x), g),
-			operator: TokenType.PLUS,
-			right: OpInfixObj(TokenType.ASTERISK)(f, yield* diffPolynomial(g, x)),
-		});
-	});
+	Effect.all([diffPolynomial(f, x), diffPolynomial(g, x)]).pipe(
+		Effect.flatMap(([df, dg]) =>
+			Effect.succeed(
+				InfixObj.make({
+					left: OpInfixObj(TokenType.ASTERISK)(df, g),
+					operator: TokenType.PLUS,
+					right: OpInfixObj(TokenType.ASTERISK)(f, dg),
+				}),
+			),
+		),
+	);
 
 export const sumAndDifferenceRule = (
 	f: PolynomialObj,
@@ -58,13 +66,17 @@ export const sumAndDifferenceRule = (
 	x: IdentExp,
 	operator: typeof TokenType.PLUS | typeof TokenType.MINUS,
 ) =>
-	Effect.gen(function* () {
-		return InfixObj.make({
-			left: yield* diffPolynomial(f, x),
-			operator,
-			right: yield* diffPolynomial(g, x),
-		});
-	});
+	Effect.all([diffPolynomial(f, x), diffPolynomial(g, x)]).pipe(
+		Effect.flatMap(([df, dg]) =>
+			Effect.succeed(
+				InfixObj.make({
+					left: df,
+					operator,
+					right: dg,
+				}),
+			),
+		),
+	);
 
 export const powerRule = (coeff: IntegerObj, power: IntegerObj, x: IdentExp) =>
 	newTerm(
@@ -111,7 +123,6 @@ export const recursivelySubstitute = (
 
 export const chainRule = (f: PolynomialObj, g: PolynomialObj, x: IdentExp) =>
 	Effect.all([diffPolynomial(f, x), diffPolynomial(g, x)]).pipe(
-		Effect.tap(([f, g]) => Effect.logDebug("f", f, "g", g)),
 		Effect.flatMap(([left, right]) =>
 			recursivelySubstitute(left, g, x).pipe(
 				Effect.flatMap((left) =>

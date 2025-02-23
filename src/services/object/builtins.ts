@@ -1,4 +1,3 @@
-import { FuncExp } from "@/schemas/nodes/exps/function";
 import { BuiltInObj } from "@/schemas/objs/built-in";
 import { ErrorObj } from "@/schemas/objs/error";
 import { FunctionObj } from "@/schemas/objs/function";
@@ -14,11 +13,31 @@ import type { Environment } from "./environment";
 // Where does this fit.
 // it would be here where
 
+const makeUnaryMathFunction =
+	(mathFn: (x: number) => number) =>
+	(...args: Obj[]) =>
+		Schema.decodeUnknown(Schema.Tuple(IntegerObj))(args).pipe(
+			Effect.flatMap(([{ value }]) =>
+				Effect.succeed(IntegerObj.make({ value: mathFn(value) })),
+			),
+		);
+
+const sin = makeUnaryMathFunction(Math.sin);
+const cos = makeUnaryMathFunction(Math.cos);
+const tan = makeUnaryMathFunction(Math.tan);
+const ln = makeUnaryMathFunction(Math.log);
+const exp = makeUnaryMathFunction(Math.exp);
+
+const pi = (...args: Obj[]) =>
+	Effect.succeed(IntegerObj.make({ value: Math.PI })); // to get around not having decimals.
+const e = (...args: Obj[]) =>
+	Effect.succeed(IntegerObj.make({ value: Math.E })); // to get around not having decimals.
+
 const diff = (...args: Obj[]) =>
 	Schema.decodeUnknown(
 		Schema.Tuple(
 			Schema.Struct({
-				params: Schema.Tuple(Schema.Union(IdentExp, FuncExp)), // of a single ident.
+				params: Schema.Tuple(IdentExp), // of a single ident.
 				body: BlockStmt,
 				env: Schema.Unknown, // setting this to env blows everything up
 			}),
@@ -32,56 +51,50 @@ const diff = (...args: Obj[]) =>
 					env,
 				},
 			]) =>
-				Match.value(params[0]).pipe(
-					Match.tag("FuncExp", () =>
-						Effect.gen(function* () {
-							return yield* Effect.succeed(true);
-							// f(g(x)) = f'(g(x)) * g'(x)
-						}).pipe(Effect.tap((e) => Effect.logDebug("func exp", params))),
-					),
-					Match.tag("IdentExp", () =>
-						Effect.gen(function* () {
-							// suppose instead I
+				Effect.gen(function* () {
+					// suppose instead I
 
-							// ASSUME THERE IS ONLY A SINGLE STATEMENT - FOR NOW
-							const expStmt = (yield* Schema.decodeUnknown(
-								Schema.Tuple(ExpStmt),
-							)(statements))[0];
+					// ASSUME THERE IS ONLY A SINGLE STATEMENT - FOR NOW
+					const expStmt = (yield* Schema.decodeUnknown(Schema.Tuple(ExpStmt))(
+						statements,
+					))[0];
 
-							const newBody = BlockStmt.make({
-								token,
-								statements: [
-									ExpStmt.make({
-										...expStmt,
-										expression: DiffExp.make({
-											token: {
-												_tag: "diff",
-												literal: "diff",
-											},
-											exp: expStmt.expression,
-											params,
-										}),
-									}),
-								],
-							});
+					const newBody = BlockStmt.make({
+						token,
+						statements: [
+							ExpStmt.make({
+								...expStmt,
+								expression: DiffExp.make({
+									token: {
+										_tag: "diff",
+										literal: "diff",
+									},
+									exp: expStmt.expression,
+									params,
+								}),
+							}),
+						],
+					});
 
-							return FunctionObj.make({
-								params,
-								body: newBody,
-								env: env as Environment,
-							});
-						}).pipe(
-							// Effect.tap((e) => Effect.logDebug("identExp case", params, e)),
-						),
-					),
-					Match.exhaustive,
-				),
+					return FunctionObj.make({
+						params,
+						body: newBody,
+						env: env as Environment,
+					});
+				}),
 		),
 	);
 
 export const builtins = {
 	len: BuiltInObj.make({ fn: "len" }),
 	diff: BuiltInObj.make({ fn: "diff" }),
+	sin: BuiltInObj.make({ fn: "sin" }),
+	cos: BuiltInObj.make({ fn: "cos" }),
+	tan: BuiltInObj.make({ fn: "tan" }),
+	e: BuiltInObj.make({ fn: "e" }),
+	ln: BuiltInObj.make({ fn: "ln" }),
+	pi: BuiltInObj.make({ fn: "pi" }),
+	exp: BuiltInObj.make({ fn: "exp" }),
 } as const;
 
 export const builtInFnMap = {
@@ -111,6 +124,13 @@ export const builtInFnMap = {
 			);
 		}),
 	diff,
+	sin,
+	cos,
+	tan,
+	ln,
+	e,
+	exp,
+	pi,
 } as const;
 
 const builtinKeys = Object.keys(builtins) as (keyof typeof builtins)[]; // hack
