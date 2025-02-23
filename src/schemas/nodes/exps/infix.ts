@@ -21,7 +21,7 @@ export const InfixExp = Schema.TaggedStruct("InfixExp", {
 	right: Schema.suspend((): Schema.Schema<Exp> => Exp),
 });
 
-export const OpInfixExp = (op: InfixOperator) => (left: Exp, right: Exp) =>
+export const OpInfixExp = (op: InfixOperator) => (left: Exp) => (right: Exp) =>
 	InfixExp.make({
 		token: {
 			_tag: op,

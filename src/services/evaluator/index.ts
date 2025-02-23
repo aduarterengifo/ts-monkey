@@ -78,13 +78,11 @@ const nodeEvalMatch = (env: Environment, identExp: IdentExp | undefined) =>
 				return yield* evalPrefixExpression(operator)(r);
 			}),
 		InfixExp: ({ left, operator, right }) =>
-			Effect.gen(function* () {
-				const leftEval = yield* Eval(left)(env, identExp);
-				const rightEval = yield* Eval(right)(env, identExp);
-				// yield* logDebug('ident', identExp)
-				// yield* logDebug('rightEval', rightEval)
-				return yield* evalInfixExpression(operator)(leftEval)(rightEval);
-			}),
+			Effect.all([Eval(left)(env, identExp), Eval(right)(env, identExp)]).pipe(
+				Effect.flatMap(([leftVal, rightVal]) =>
+					evalInfixExpression(operator)(leftVal)(rightVal),
+				),
+			),
 		BoolExp: ({ value }) => Effect.succeed(nativeBoolToObjectBool(value)),
 		IfExp: (ie) => evalIfExpression(ie, env, identExp),
 		BlockStmt: (stmt) => evalBlockStatement(stmt, env, identExp),
@@ -124,26 +122,30 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 			Effect.flatMap(Schema.decodeUnknown(PolynomialObj)),
 		);
 
-		const diffSoftEval = yield* diffPolynomial(
-			softEval as PolynomialObj,
-			diffExp.params[0],
-		);
+		const diffSoftEval = yield* diffPolynomial(softEval, diffExp.params[0]);
 
 		// maybe simplest will be to convert back to exp and Eval.
 		const convertToExp = (
 			obj: PolynomialObj,
-		): Effect.Effect<Exp, KennethParseError> => {
+		): Effect.Effect<Exp, ParseError> => {
 			return Match.value(obj).pipe(
 				Match.tag("IntegerObj", ({ value }) =>
 					Effect.succeed(nativeToIntExp(value)),
 				),
 				Match.tag("IdentObj", ({ identExp }) => Effect.succeed(identExp)),
 				Match.tag("InfixObj", ({ left, operator, right }) =>
-					Effect.gen(function* () {
-						const leftExp = yield* convertToExp(left as PolynomialObj);
-						const rightExp = yield* convertToExp(right as PolynomialObj);
-						return OpInfixExp(operator)(leftExp, rightExp);
-					}),
+					Effect.all([
+						Schema.decodeUnknown(PolynomialObj)(left).pipe(
+							Effect.flatMap(convertToExp),
+						),
+						Schema.decodeUnknown(PolynomialObj)(right).pipe(
+							Effect.flatMap(convertToExp),
+						),
+					]).pipe(
+						Effect.flatMap(([leftVal, rightVal]) =>
+							Effect.succeed(OpInfixExp(operator)(leftVal)(rightVal)),
+						),
+					),
 				),
 				Match.exhaustive,
 			);
