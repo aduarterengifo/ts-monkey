@@ -1,7 +1,6 @@
-import { useState } from "react";
-import "./app.css";
 import { objInspect } from "@/services/object";
 import { Match } from "effect";
+import { useState } from "react";
 import { Textarea } from "../components/ui/textarea";
 import { runAndInterpret } from "../programs/run-and-interpret";
 import { examples } from "./examples";
@@ -56,16 +55,16 @@ function App() {
 	};
 	return (
 		<div className="font-mono">
-			<div className="flex flex-col items-start pb-2 pl-2 w-(--content)">
+			<div className="flex flex-col items-start pb-2 pl-2 w-[80ch]">
 				ts-monkey repl
 			</div>
 			<Textarea
 				value={text}
 				onKeyDown={handleKeyDown}
 				onChange={handleChange}
-				className="resize-none h-80"
+				className="resize-none h-80 w-full"
 			/>
-			<div className="flex flex-col items-start ">
+			<div className="flex flex-col items-start w-full">
 				{examples.map((str, i) => (
 					<div className="text-left" key={`example-${i}`}>
 						{str}
