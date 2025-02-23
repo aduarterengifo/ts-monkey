@@ -10,7 +10,6 @@ import { StringObj } from "@/schemas/objs/string";
 import type { Obj } from "@/schemas/objs/union";
 import { PolynomialObj } from "@/schemas/objs/unions/polynomials";
 import { Effect, Match, Schema } from "effect";
-import { logDebug } from "effect/Effect";
 import type { ParseError } from "effect/ParseResult";
 import type { KennethParseError } from "src/errors/kenneth/parse";
 import type { DiffExp } from "src/schemas/nodes/exps/diff";
@@ -234,7 +233,7 @@ const evalStatements = (
 			}
 		}
 		return result;
-	}).pipe(Effect.tap((e) => logDebug("eval stmt", e)));
+	});
 
 export const evalProgram = (stmts: readonly Stmt[], env: Environment) =>
 	evalStatements(stmts, env, undefined).pipe(
@@ -248,7 +247,6 @@ export const evalBlockStatement = (
 ) =>
 	evalStatements(block.statements, env, ident).pipe(
 		Effect.withSpan("eval.evalBlockStatement"),
-		Effect.tap(() => logDebug("eval block")),
 	);
 
 export const evalInfixExpression =
