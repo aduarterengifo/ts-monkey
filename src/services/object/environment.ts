@@ -21,18 +21,6 @@ export const set = (env: Environment) => (key: string, value: Obj) => {
 	return value;
 };
 
-// export type Environment = {
-// 	store: Map<string, Obj>;
-// 	outer: Environment | undefined;
-// };
-
-// export const createEnvironment = (
-// 	outer?: Environment | undefined,
-// ): Environment => ({
-// 	store: new Map<string, Obj>(),
-// 	outer,
-// });
-
 export interface Environment {
 	readonly outer: Environment | undefined;
 	readonly store: Map<string, Obj>;
@@ -53,11 +41,11 @@ export const Environment = Schema.Struct({
 	),
 });
 
-// export const createEnvironment = (outer?: Environment | undefined) =>
-// 	Environment.make({
-// 		store: new Map<string, Obj>(),
-// 		outer,
-// 	});
+export const createEnvironment = (outer?: Environment | undefined) =>
+	Environment.make({
+		store: new Map<string, Obj>(),
+		outer,
+	});
 
 export const printStore = (env: Environment): string => {
 	let output = "Environment Store:\n";
