@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { nodeString, tokenLiteral } from "@/schemas/nodes/union";
 import { ErrorObj } from "@/schemas/objs/error";
+import type { Obj } from "@/schemas/objs/union";
 import {
 	Effect,
 	Layer,
@@ -455,7 +456,7 @@ const testSuites: {
 					["let add = fn(x, y) { x + y; }; add(5, 5);", 10],
 					["let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20],
 					["fn(x) { x; }(5)", 5],
-					["let add = fn(x, y) { fn (x,y) {x + y}; }; add()(5,5)", 10],
+					["let add = fn(x, y) { fn (x,y) {x + y}; }; add(5,5)(4,4)", 8], // calling functions with less args than they have leaves to problems...
 				],
 				fn: (expected: number) => (evaluated: Obj) =>
 					testIntegerObject(evaluated, expected),
@@ -488,8 +489,8 @@ const testSuites: {
 					["diff(fn(x) { x })(3)", 1],
 					["diff(fn(x) { 2 })(3)", 0],
 					["diff(fn(x) { 2 * x })(3)", 2],
-					["diff(fn(x) { (2 + 0) * x })(3)", 2], // internal addition also does not work, fuck. Need simplification logic.
-					["let second = 2; diff(fn(x) { x ** second })(3)", 6], // LEAVE FOR LATER. IDENT SUBSTITUTION
+					["diff(fn(x) { (2 + 0) * x })(3)", 2],
+					["let second = 2; diff(fn(x) { x ** second })(3)", 6],
 					["diff(fn(x) { 3 * x ** 2 })(3)", 18],
 					["diff(fn(x) { 2 + 2 })(3)", 0],
 					["diff(fn(x) { 2 + x })(3)", 1],
@@ -498,8 +499,16 @@ const testSuites: {
 					["diff(fn(x) { 2 * x ** 3 + x + 3 + 4 * x + 5 * x ** 4 })(3)", 599],
 					["let f = fn(y) { y }; diff(fn(x) { x ** 7 + f(2) })(3)", 5103],
 					["let f = fn(y) { y }; diff(fn(x) { x ** 7 + f(x) })(3)", 5104],
-					["let second = 2; diff(fn(x) { x ** 7 + second })(3)", 5103], // LEAVE FOR LATER. IDENT SUBSTITUTION
+					["let second = 2; diff(fn(x) { x ** 7 + second })(3)", 5103],
 				],
+				fn: (expected: number) => (evaluated: Obj) =>
+					Effect.gen(function* () {
+						yield* testIntegerObject(evaluated, expected);
+					}),
+			},
+			{
+				description: "differentiation substraction",
+				tests: [["diff(fn(x) { 2 * x ** 3 - (x + 3) })(3)", 53]],
 				fn: (expected: number) => (evaluated: Obj) =>
 					Effect.gen(function* () {
 						yield* testIntegerObject(evaluated, expected);
