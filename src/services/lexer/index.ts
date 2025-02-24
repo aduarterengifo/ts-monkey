@@ -1,12 +1,12 @@
-import { Effect, Either, Match } from 'effect'
-import { LexerStateService } from './state'
-import { lookupIndent } from '../tokens'
-import { decodeUnknownEither } from 'effect/Schema'
-import { lexerSymbolSchema } from '../../schemas/chars/next-token'
-import { TokenType } from '../../schemas/token-types/union'
-import type { Token } from '../../schemas/token/unions/all'
+import { Effect, Either, Match } from "effect";
+import { decodeUnknownEither } from "effect/Schema";
+import { lexerSymbolSchema } from "../../schemas/chars/next-token";
+import { TokenType } from "../../schemas/token-types/union";
+import type { Token } from "../../schemas/token/unions/all";
+import { lookupIndent } from "../tokens";
+import { LexerStateService } from "./state";
 
-export class Lexer extends Effect.Service<Lexer>()('Lexer', {
+export class Lexer extends Effect.Service<Lexer>()("Lexer", {
 	effect: Effect.gen(function* () {
 		const {
 			getInput,
@@ -23,60 +23,60 @@ export class Lexer extends Effect.Service<Lexer>()('Lexer', {
 			getPos2History,
 			saveToPos1History,
 			saveToPos2History,
-		} = yield* LexerStateService
+		} = yield* LexerStateService;
 
-		const init = setInput
+		const init = setInput;
 
 		const readChar = Effect.gen(function* () {
-			const input = yield* getInput
-			const pos2 = yield* getPos2
+			const input = yield* getInput;
+			const pos2 = yield* getPos2;
 
 			if (pos2 >= input.length) {
-				yield* setChar('\0')
+				yield* setChar("\0");
 			} else {
-				yield* setChar(input[pos2])
+				yield* setChar(input[pos2]);
 			}
-			yield* setPos1(pos2)
-			yield* incPos2
+			yield* setPos1(pos2);
+			yield* incPos2;
 
-			yield* saveToPos1History(yield* getPos1)
-			yield* saveToPos2History(yield* getPos2)
-		})
+			yield* saveToPos1History(yield* getPos1);
+			yield* saveToPos2History(yield* getPos2);
+		});
 
 		const peekChar = Effect.gen(function* () {
-			const input = yield* getInput
-			const pos2 = yield* getPos2
-			return pos2 >= input.length ? 0 : input[pos2]
-		})
+			const input = yield* getInput;
+			const pos2 = yield* getPos2;
+			return pos2 >= input.length ? 0 : input[pos2];
+		});
 
 		const newToken = (tokenType: TokenType, ch: string): Token => ({
 			_tag: tokenType,
 			literal: ch,
-		})
+		});
 
 		// ---
 
 		const read = (pattern: RegExp, type: string) =>
 			Effect.gen(function* () {
-				const position = yield* getPos1
+				const position = yield* getPos1;
 				while (pattern.test(yield* getChar)) {
-					yield* readChar
+					yield* readChar;
 				}
-				const input = yield* getInput
+				const input = yield* getInput;
 
-				const newPosition = yield* getPos1
-				const res = input.slice(position, newPosition)
-				return res
-			})
+				const newPosition = yield* getPos1;
+				const res = input.slice(position, newPosition);
+				return res;
+			});
 
-		const readIdentifier = read(/[a-zA-Z_]/, 'Identifier')
-		const readNumber = read(/\d/, 'Number')
+		const readIdentifier = read(/[a-zA-Z_]/, "Identifier");
+		const readNumber = read(/\d/, "Number");
 		const eatWhiteSpace = Effect.gen(function* () {
-			const whitespaceChars = [' ', '\t', '\n', '\r']
+			const whitespaceChars = [" ", "\t", "\n", "\r"];
 			while (whitespaceChars.includes(yield* getChar)) {
-				yield* readChar
+				yield* readChar;
 			}
-		})
+		});
 
 		const singleCharLookAhead = (
 			firstChar: string,
@@ -85,36 +85,35 @@ export class Lexer extends Effect.Service<Lexer>()('Lexer', {
 			defaultType: TokenType,
 		): Effect.Effect<Token, never, never> =>
 			Effect.gen(function* () {
-				const ch = yield* getChar
-				yield* readChar
-				const ch2 = yield* getChar
+				const ch = yield* getChar;
+				yield* readChar;
+				const ch2 = yield* getChar;
 				if (ch2 === expectedSecond) {
-					yield* readChar
-					return newToken(matchedType, `${ch}${ch2}`)
+					yield* readChar;
+					return newToken(matchedType, `${ch}${ch2}`);
 				}
-				return newToken(defaultType, firstChar)
-			})
+				return newToken(defaultType, firstChar);
+			});
 
 		const newTokenAndReadChar =
 			(tokenType: TokenType) =>
 			(ch: string): Effect.Effect<Token, never, never> =>
-				Effect.gen(function* () {
-					yield* readChar
-					return newToken(tokenType, ch)
-				})
+				readChar.pipe(
+					Effect.flatMap(() => Effect.succeed(newToken(tokenType, ch))),
+				);
 
 		const readString = Effect.gen(function* () {
-			const position = yield* getPos1
+			const position = yield* getPos1;
 			while (true) {
-				yield* readChar
-				const ch = yield* getChar
-				if (ch === '"' || ch === '\0') {
-					break
+				yield* readChar;
+				const ch = yield* getChar;
+				if (ch === '"' || ch === "\0") {
+					break;
 				}
 			}
-			const input = yield* getInput
-			return input.slice(position + 1, yield* getPos1)
-		})
+			const input = yield* getInput;
+			return input.slice(position + 1, yield* getPos1);
+		});
 
 		const getStory = Effect.gen(function* () {
 			return {
@@ -122,27 +121,27 @@ export class Lexer extends Effect.Service<Lexer>()('Lexer', {
 				tokens: yield* getTokens,
 				pos1History: yield* getPos1History,
 				pos2History: yield* getPos2History,
-			}
-		})
+			};
+		});
 
 		const nextToken: Effect.Effect<Token, never, never> = Effect.gen(
 			function* () {
-				yield* eatWhiteSpace
-				const ch = yield* getChar
+				yield* eatWhiteSpace;
+				const ch = yield* getChar;
 
-				const decodedCh = decodeUnknownEither(lexerSymbolSchema)(ch)
+				const decodedCh = decodeUnknownEither(lexerSymbolSchema)(ch);
 
 				const token = yield* Either.match(decodedCh, {
 					onLeft: (left) =>
 						Effect.gen(function* () {
 							if (/[a-zA-Z_]/.test(ch)) {
-								const tokenLiteral = yield* readIdentifier
-								return newToken(lookupIndent(tokenLiteral), tokenLiteral)
+								const tokenLiteral = yield* readIdentifier;
+								return newToken(lookupIndent(tokenLiteral), tokenLiteral);
 							}
 							if (/\d/.test(ch)) {
-								return newToken(TokenType.INT, yield* readNumber)
+								return newToken(TokenType.INT, yield* readNumber);
 							}
-							return yield* newTokenAndReadChar(TokenType.ILLEGAL)('')
+							return yield* newTokenAndReadChar(TokenType.ILLEGAL)("");
 						}),
 					onRight: (right) =>
 						Effect.gen(function* () {
@@ -213,16 +212,16 @@ export class Lexer extends Effect.Service<Lexer>()('Lexer', {
 								Match.when(TokenType.QUOTE, function* () {
 									return yield* newTokenAndReadChar(TokenType.STRING)(
 										yield* readString,
-									)
+									);
 								}),
 								Match.exhaustive,
-							)
+							);
 						}),
-				})
-				yield* saveToken(token)
-				return token
+				});
+				yield* saveToken(token);
+				return token;
 			},
-		)
+		);
 
 		// ---
 
@@ -238,7 +237,7 @@ export class Lexer extends Effect.Service<Lexer>()('Lexer', {
 			newTokenAndReadChar,
 			getStory,
 			nextToken,
-		}
+		};
 	}),
 	dependencies: [LexerStateService.Default],
 }) {}
