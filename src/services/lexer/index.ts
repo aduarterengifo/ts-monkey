@@ -144,79 +144,77 @@ export class Lexer extends Effect.Service<Lexer>()("Lexer", {
 							return yield* newTokenAndReadChar(TokenType.ILLEGAL)("");
 						}),
 					onRight: (right) =>
-						Effect.gen(function* () {
-							return yield* Match.value(right).pipe(
-								Match.when(TokenType.ASSIGN, () =>
-									singleCharLookAhead(
-										TokenType.ASSIGN,
-										TokenType.ASSIGN,
-										TokenType.EQ,
-										TokenType.ASSIGN,
-									),
+						Match.value(right).pipe(
+							Match.when(TokenType.ASSIGN, () =>
+								singleCharLookAhead(
+									TokenType.ASSIGN,
+									TokenType.ASSIGN,
+									TokenType.EQ,
+									TokenType.ASSIGN,
 								),
-								Match.when(TokenType.BANG, () =>
-									singleCharLookAhead(
-										TokenType.BANG,
-										TokenType.ASSIGN,
-										TokenType.NOT_EQ,
-										TokenType.BANG,
-									),
+							),
+							Match.when(TokenType.BANG, () =>
+								singleCharLookAhead(
+									TokenType.BANG,
+									TokenType.ASSIGN,
+									TokenType.NOT_EQ,
+									TokenType.BANG,
 								),
-								Match.when(TokenType.MINUS, () =>
-									newTokenAndReadChar(TokenType.MINUS)(ch),
+							),
+							Match.when(TokenType.ASTERISK, () =>
+								singleCharLookAhead(
+									TokenType.ASTERISK,
+									TokenType.ASTERISK,
+									TokenType.EXPONENT,
+									TokenType.ASTERISK,
 								),
-								Match.when(TokenType.EXPONENT, () =>
-									newTokenAndReadChar(TokenType.EXPONENT)(ch),
-								),
-								Match.when(TokenType.SLASH, () =>
-									newTokenAndReadChar(TokenType.SLASH)(ch),
-								),
-								Match.when(TokenType.ASTERISK, () =>
-									singleCharLookAhead(
-										TokenType.ASTERISK,
-										TokenType.ASTERISK,
-										TokenType.EXPONENT,
-										TokenType.ASTERISK,
-									),
-								),
-								Match.when(TokenType.LT, () =>
-									newTokenAndReadChar(TokenType.LT)(ch),
-								),
-								Match.when(TokenType.GT, () =>
-									newTokenAndReadChar(TokenType.GT)(ch),
-								),
-								Match.when(TokenType.SEMICOLON, () =>
-									newTokenAndReadChar(TokenType.SEMICOLON)(ch),
-								),
-								Match.when(TokenType.LPAREN, () =>
-									newTokenAndReadChar(TokenType.LPAREN)(ch),
-								),
-								Match.when(TokenType.RPAREN, () =>
-									newTokenAndReadChar(TokenType.RPAREN)(ch),
-								),
-								Match.when(TokenType.COMMA, () =>
-									newTokenAndReadChar(TokenType.COMMA)(ch),
-								),
-								Match.when(TokenType.PLUS, () =>
-									newTokenAndReadChar(TokenType.PLUS)(ch),
-								),
-								Match.when(TokenType.LBRACE, () =>
-									newTokenAndReadChar(TokenType.LBRACE)(ch),
-								),
-								Match.when(TokenType.RBRACE, () =>
-									newTokenAndReadChar(TokenType.RBRACE)(ch),
-								),
-								Match.when(TokenType.EOF, () =>
-									newTokenAndReadChar(TokenType.EOF)(ch),
-								),
-								Match.when(TokenType.QUOTE, function* () {
-									return yield* newTokenAndReadChar(TokenType.STRING)(
-										yield* readString,
-									);
-								}),
-								Match.exhaustive,
-							);
-						}),
+							),
+							Match.when(TokenType.MINUS, newTokenAndReadChar(TokenType.MINUS)),
+							Match.when(
+								TokenType.EXPONENT,
+								newTokenAndReadChar(TokenType.EXPONENT),
+							),
+							Match.when(TokenType.SLASH, newTokenAndReadChar(TokenType.SLASH)),
+							Match.when(TokenType.LT, newTokenAndReadChar(TokenType.LT)),
+							Match.when(TokenType.GT, newTokenAndReadChar(TokenType.GT)),
+							Match.when(
+								TokenType.SEMICOLON,
+								newTokenAndReadChar(TokenType.SEMICOLON),
+							),
+							Match.when(
+								TokenType.LPAREN,
+								newTokenAndReadChar(TokenType.LPAREN),
+							),
+							Match.when(
+								TokenType.RPAREN,
+								newTokenAndReadChar(TokenType.RPAREN),
+							),
+							Match.when(
+								TokenType.LBRACE,
+								newTokenAndReadChar(TokenType.LBRACE),
+							),
+							Match.when(
+								TokenType.RBRACE,
+								newTokenAndReadChar(TokenType.RBRACE),
+							),
+							Match.when(
+								TokenType.LBRACKET,
+								newTokenAndReadChar(TokenType.COMMA),
+							),
+							Match.when(
+								TokenType.RBRACKET,
+								newTokenAndReadChar(TokenType.COMMA),
+							),
+							Match.when(TokenType.COMMA, newTokenAndReadChar(TokenType.COMMA)),
+							Match.when(TokenType.PLUS, newTokenAndReadChar(TokenType.PLUS)),
+							Match.when(TokenType.EOF, newTokenAndReadChar(TokenType.EOF)),
+							Match.when(TokenType.QUOTE, function* () {
+								return yield* newTokenAndReadChar(TokenType.STRING)(
+									yield* readString,
+								);
+							}),
+							Match.exhaustive,
+						),
 				});
 				yield* saveToken(token);
 				return token;

@@ -62,6 +62,11 @@ export const nodeString = (node: KNode): string =>
 			(prefixExp) => `(${prefixExp.operator}${nodeString(prefixExp.right)})`,
 		),
 		Match.tag("IdentExp", (identExp) => identExp.value),
+		Match.tag(
+			"ArrayExp",
+			(arrayExp) =>
+				`[${arrayExp.elements.map((e) => nodeString(e)).join(", ")}]`,
+		),
 		Match.tag("BlockStmt", (blockStmt) =>
 			blockStmt.statements.map((stmt) => nodeString(stmt)).join("\n"),
 		),

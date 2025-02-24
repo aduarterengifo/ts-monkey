@@ -20,7 +20,9 @@ with extensions for symbolic differentiation.
 
 ## TODO 
 
-- [ ] view local traces 
+- [x] view local traces 
+- [ ] arrays 
+- [ ] hashes
 - [ ] diff multi-statement functions 
 - [ ] graph functions 
 - [ ] trig derivatives

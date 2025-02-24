@@ -130,14 +130,13 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 				),
 				Match.tag("IdentObj", ({ identExp }) => Effect.succeed(identExp)),
 				Match.tag("InfixObj", ({ left, operator, right }) =>
-					Effect.all([
-						Schema.decodeUnknown(PolynomialObj)(left).pipe(
-							Effect.flatMap(convertToExp),
+					Effect.all(
+						[left, right].map((obj: Obj) =>
+							Schema.decodeUnknown(PolynomialObj)(obj).pipe(
+								Effect.flatMap(convertToExp),
+							),
 						),
-						Schema.decodeUnknown(PolynomialObj)(right).pipe(
-							Effect.flatMap(convertToExp),
-						),
-					]).pipe(
+					).pipe(
 						Effect.flatMap(([leftVal, rightVal]) =>
 							Effect.succeed(OpInfixExp(operator)(leftVal)(rightVal)),
 						),
