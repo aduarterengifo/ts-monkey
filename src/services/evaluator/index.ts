@@ -29,8 +29,6 @@ import { KennethEvalError } from "../../errors/kenneth/eval";
 import type { InfixOperator } from "../../schemas/infix-operator";
 import { diffPolynomial } from "../diff/obj";
 import {
-	isBuiltInObj,
-	isFunctionObj,
 	isIdentObj,
 	isInfixObj,
 	isIntegerObj,
@@ -235,7 +233,7 @@ export const evalInfixExpression =
 				isInfixObj(left) ||
 				isInfixObj(right)
 			) {
-				return InfixObj.make({ left, operator, right });
+				return InfixObj.make({ left, operator, right }); // soft eval condition
 			}
 			if (isIntegerObj(left) && isIntegerObj(right)) {
 				return evalIntegerInfixExpression(operator, left, right);
@@ -288,16 +286,8 @@ export const evalPrefixExpression =
 		Match.value(operator).pipe(
 			Match.when(TokenType.BANG, () => evalBangOperatorExpression(right)),
 			Match.when(TokenType.MINUS, () =>
-				Match.value(right).pipe(
-					Match.tag("IntegerObj", (intObj) =>
-						evalMinusPrefixOperatorExpression(intObj),
-					),
-					Match.orElse(
-						() =>
-							new KennethEvalError({
-								message: `unknown operator: -${right._tag}`,
-							}),
-					),
+				Schema.decodeUnknown(IntegerObj)(right).pipe(
+					Effect.flatMap(evalMinusPrefixOperatorExpression),
 				),
 			),
 			Match.exhaustive,
