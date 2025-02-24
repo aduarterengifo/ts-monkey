@@ -11,7 +11,6 @@ import {
 	Match,
 	Schema,
 } from "effect";
-import { logDebug } from "effect/Effect";
 import { CallExp } from "src/schemas/nodes/exps/call";
 import { FuncExp } from "src/schemas/nodes/exps/function";
 import { PrefixExp } from "src/schemas/nodes/exps/prefix";
@@ -35,6 +34,8 @@ import {
 	testNullOject,
 	testStringObject,
 } from "./utils";
+
+const secSquared = (x: number) => 1 / Math.cos(x) ** 2;
 
 type TestSuite = {
 	description: string;
@@ -602,6 +603,19 @@ const testSuites: {
 					["exp(e())", Math.exp(Math.E)],
 					["exp(1)", Math.exp(1)],
 					["ln(exp(3))", Math.log(Math.exp(3))],
+				],
+				fn: (expected: number) => (evaluated: Obj) =>
+					testIntegerObject(evaluated, expected),
+			},
+			{
+				description: "trig diff",
+				tests: [
+					["diff(fn(x) {sin(x)})(0)", Math.cos(0)],
+					["diff(fn(x) {sin(x)})(pi() / 2)", Math.cos(Math.PI / 2)],
+					["diff(fn(x) {cos(x)})(0)", -Math.sin(0)],
+					["diff(fn(x) {cos(x)})(pi() / 2)", -Math.sin(Math.PI / 2)],
+					["diff(fn(x) {tan(x)})(0)", secSquared(0)],
+					["diff(fn(x) {tan(x)})(pi() / 4)", secSquared(Math.PI / 4)],
 				],
 				fn: (expected: number) => (evaluated: Obj) =>
 					testIntegerObject(evaluated, expected),

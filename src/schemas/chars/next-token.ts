@@ -1,6 +1,7 @@
-import { Schema } from 'effect'
-import { TokenType } from '../token-types/union'
+import { Schema } from "effect";
+import { TokenType } from "../token-types/union";
 
+// I'm conviced this is just finite-tokentypes
 export const lexerSymbolSchema = Schema.Literal(
 	TokenType.ASSIGN,
 	TokenType.BANG,
@@ -19,6 +20,8 @@ export const lexerSymbolSchema = Schema.Literal(
 	TokenType.RBRACE,
 	TokenType.EOF,
 	TokenType.QUOTE,
-)
+	TokenType.LBRACKET,
+	TokenType.RBRACKET,
+);
 
-export type LexerNextTokenSymbol = typeof lexerSymbolSchema.Type
+export type LexerNextTokenSymbol = typeof lexerSymbolSchema.Type;

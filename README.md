@@ -1,10 +1,8 @@
-# ts-monkey
+# effect-monkey
 
-Typescript implementation of monkey interpreter from [Writing An Interpreter In Go](https://interpreterbook.com)
+[effect](https://effect.website) implementation of monkey interpreter from [Writing An Interpreter In Go](https://interpreterbook.com)
 
-uses [effect](https://effect.website)
-
-adds extensions for symbolic differentiation.
+with extensions for symbolic differentiation.
 
 ## Symbolic Differentiation 
 
@@ -13,8 +11,24 @@ adds extensions for symbolic differentiation.
 - [x] power rule
 - [x] product rule
 - [x] quotient rule
-- [ ] chain rule
+- [x] chain rule
 
 ## REPL 
 
 [repl](https://monkey.andres.duarterengifo.com)
+
+
+## TODO 
+
+- [x] view local traces 
+- [ ] arrays 
+- [ ] hashes
+- [ ] diff multi-statement functions 
+- [ ] graph functions 
+- [ ] trig derivatives
+  - [ ] integrate with chain rule
+- [ ] exp/ln derivatives 
+  - [ ] integrate with chain rule
+- [ ] partial derivatives 
+    -  [ ] pass ident as second arg. 
+- [ ] release as package

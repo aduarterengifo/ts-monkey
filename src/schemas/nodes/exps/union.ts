@@ -1,4 +1,5 @@
 import { Data, Match, Schema } from "effect";
+import { ArrayExp } from "./array";
 import { BoolExp, nativeToBoolExp } from "./boolean";
 import { CallExp } from "./call";
 import { DiffExp } from "./diff";
@@ -20,7 +21,8 @@ export type Exp =
 	| IntExp
 	| PrefixExp
 	| StrExp
-	| DiffExp;
+	| DiffExp
+	| ArrayExp;
 
 export const Exp = Schema.suspend(
 	(): Schema.Schema<Exp> =>
@@ -35,6 +37,7 @@ export const Exp = Schema.suspend(
 			PrefixExp,
 			StrExp,
 			DiffExp,
+			ArrayExp,
 		),
 );
 
