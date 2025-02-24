@@ -80,16 +80,24 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 			}).pipe(Effect.withSpan("parser.peekTokenIs"));
 
 		const curTokenIs = (tokenType: TokenType) =>
-			Effect.gen(function* () {
-				return tokenIs(yield* getCurToken, tokenType);
-			}).pipe(Effect.withSpan("parser.curTokenIs"));
+			getCurToken
+				.pipe(
+					Effect.flatMap((curToken) =>
+						Effect.succeed(tokenIs(curToken, tokenType)),
+					),
+				)
+				.pipe(Effect.withSpan("parser.curTokenIs"));
 
 		const parseIdentifier = (curToken: IdentToken) =>
-			Effect.gen(function* () {
-				const identToken =
-					yield* Schema.decodeUnknown(identTokenSchema)(curToken);
-				return IdentExp.make({ token: identToken, value: identToken.literal });
-			}).pipe(Effect.withSpan("parser.parseIdentifier"));
+			Schema.decodeUnknown(identTokenSchema)(curToken)
+				.pipe(
+					Effect.flatMap((identToken) =>
+						Effect.succeed(
+							IdentExp.make({ token: identToken, value: identToken.literal }),
+						),
+					),
+				)
+				.pipe(Effect.withSpan("parser.parseIdentifier"));
 
 		const parseIntegerLiteral = (curToken: IntToken) =>
 			Effect.succeed(
@@ -97,12 +105,16 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 			).pipe(Effect.withSpan("parser.parseIntegerLiteral"));
 
 		const parseBooleanLiteral = (curToken: BoolToken) =>
-			Effect.gen(function* () {
-				return BoolExp.make({
-					token: curToken,
-					value: yield* curTokenIs(TokenType.TRUE),
-				});
-			});
+			curTokenIs(TokenType.TRUE).pipe(
+				Effect.flatMap((value) =>
+					Effect.succeed(
+						BoolExp.make({
+							token: curToken,
+							value,
+						}),
+					),
+				),
+			);
 
 		const parseGroupedExpression = (curToken: Token) =>
 			Effect.gen(function* () {

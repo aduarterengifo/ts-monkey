@@ -71,10 +71,9 @@ const nodeEvalMatch = (env: Environment) =>
 		ExpStmt: ({ expression }) => Eval(expression)(env),
 		IntExp: ({ value }) => Effect.succeed(IntegerObj.make({ value })),
 		PrefixExp: ({ operator, right }) =>
-			Effect.gen(function* () {
-				const r = yield* Eval(right)(env);
-				return yield* evalPrefixExpression(operator)(r);
-			}),
+			Eval(right)(env).pipe(
+				Effect.flatMap((r) => evalPrefixExpression(operator)(r)),
+			),
 		InfixExp: ({ left, operator, right }) =>
 			Effect.all([Eval(left)(env), Eval(right)(env)]).pipe(
 				Effect.flatMap(([leftVal, rightVal]) =>
@@ -126,10 +125,8 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 		const diffSoftEval = yield* diffPolynomial(softEval, diffExp.params[0]);
 
 		// maybe simplest will be to convert back to exp and Eval.
-		const convertToExp = (
-			obj: PolynomialObj,
-		): Effect.Effect<Exp, ParseError> => {
-			return Match.value(obj).pipe(
+		const convertToExp = (obj: PolynomialObj): Effect.Effect<Exp, ParseError> =>
+			Match.value(obj).pipe(
 				Match.tag("IntegerObj", ({ value }) =>
 					Effect.succeed(nativeToIntExp(value)),
 				),
@@ -150,7 +147,6 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 				),
 				Match.exhaustive,
 			);
-		};
 
 		const expResult = yield* convertToExp(diffSoftEval);
 
