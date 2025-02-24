@@ -1,5 +1,5 @@
 import { FALSE, TRUE, nativeBoolToObjectBool } from "@/schemas/objs/bool";
-import type { BuiltInObj } from "@/schemas/objs/built-in";
+import { BuiltInObj } from "@/schemas/objs/built-in";
 import { FunctionObj } from "@/schemas/objs/function";
 import { IdentObj } from "@/schemas/objs/ident";
 import { InfixObj } from "@/schemas/objs/infix";
@@ -87,14 +87,13 @@ const nodeEvalMatch = (env: Environment) =>
 		FuncExp: ({ parameters, body }) =>
 			Effect.succeed(FunctionObj.make({ params: parameters, body, env })),
 		CallExp: ({ fn, args }) =>
-			Effect.gen(function* () {
-				const fnEval = yield* Eval(fn)(env);
-				const argsEval = yield* evalExpressions(args, env);
-
-				return yield* isFunctionObj(fnEval) || isBuiltInObj(fnEval)
-					? applyFunction(fnEval)(argsEval)
-					: new KennethEvalError({ message: `not a function: ${fnEval._tag}` });
-			}),
+			Effect.all([Eval(fn)(env), evalExpressions(args, env)]).pipe(
+				Effect.flatMap(([fnEval, argsEval]) =>
+					Schema.decodeUnknown(Schema.Union(FunctionObj, BuiltInObj))(
+						fnEval,
+					).pipe(Effect.flatMap((obj) => applyFunction(obj)(argsEval))),
+				),
+			),
 		StrExp: ({ value }) => Effect.succeed(StringObj.make({ value })),
 		DiffExp: (diffExp) => evalDiff(diffExp)(env),
 	});

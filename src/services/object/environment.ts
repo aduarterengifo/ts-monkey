@@ -10,7 +10,7 @@ export const get =
 	(key: string): Effect.Effect<Obj, ParseError, never> =>
 		Effect.gen(function* () {
 			return (
-				env.store.get(key) ??
+				env.store[key] ??
 				(env.outer
 					? yield* get(env.outer)(key)
 					: builtins[yield* Schema.decodeUnknown(builtinsKeySchema)(key)])
@@ -18,24 +18,24 @@ export const get =
 		});
 
 export const set = (env: Environment) => (key: string, value: Obj) => {
-	env.store.set(key, value);
+	env.store[key] = value;
 	return value;
 };
 
 export interface Environment {
 	readonly outer: Environment | undefined;
-	readonly store: Map<string, Obj>;
+	readonly store: Record<string, Obj>;
 	readonly idents: readonly IdentExp[];
 }
 
 export interface EnvironmentEncoded {
 	readonly outer: EnvironmentEncoded | undefined;
-	readonly store: readonly (readonly [string, ObjEncoded])[];
+	readonly store: Record<string, ObjEncoded>;
 	readonly idents: readonly IdentExp[];
 }
 
 export const Environment = Schema.Struct({
-	store: Schema.Map({ key: Schema.String, value: Obj }),
+	store: Schema.Record({ key: Schema.String, value: Obj }),
 	idents: Schema.Array(IdentExp),
 	outer: Schema.Union(
 		Schema.suspend(
@@ -47,7 +47,7 @@ export const Environment = Schema.Struct({
 
 export const createEnvironment = (outer?: Environment | undefined) =>
 	Environment.make({
-		store: new Map<string, Obj>(),
+		store: {},
 		outer,
 		idents: [],
 	});

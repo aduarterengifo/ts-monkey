@@ -29,3 +29,4 @@ with extensions for symbolic differentiation.
   - [ ] integrate with chain rule
 - [ ] partial derivatives 
     -  [ ] pass ident as second arg. 
+- [ ] release as package

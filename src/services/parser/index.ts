@@ -215,8 +215,8 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 			Effect.succeed(StrExp.make({ token: curToken, value: curToken.literal }));
 
 		const getPrefixParseFunction = (token: PrefixParseFnToken) =>
-			Effect.gen(function* () {
-				const match = Match.type<PrefixParseFnToken>().pipe(
+			Match.value(token)
+				.pipe(
 					Match.tag(TokenType.IDENT, parseIdentifier),
 					Match.tag(TokenType.INT, parseIntegerLiteral),
 					Match.tag(TokenType.IF, parseIfExpression),
@@ -228,9 +228,8 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 					Match.tag(TokenType.STRING, parseStringLiteral),
 					Match.tag(TokenType.LPAREN, parseGroupedExpression),
 					Match.exhaustive,
-				);
-				return yield* match(token);
-			}).pipe(Effect.withSpan("parser.getPrefixParseFunction"));
+				)
+				.pipe(Effect.withSpan("parser.getPrefixParseFunction"));
 
 		const parseExpression = (
 			precendence: Precedence,
@@ -320,8 +319,8 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 			});
 
 		const getInfixParseFunction = (token: InfixParseFnToken) =>
-			Effect.gen(function* () {
-				const match = Match.type<InfixParseFnToken>().pipe(
+			Effect.succeed(
+				Match.value(token).pipe(
 					Match.tag(TokenType.PLUS, () => parseInfixExpressions),
 					Match.tag(TokenType.MINUS, () => parseInfixExpressions),
 					Match.tag(TokenType.SLASH, () => parseInfixExpressions),
@@ -333,10 +332,8 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 					Match.tag(TokenType.EXPONENT, () => parseInfixExpressions),
 					Match.tag(TokenType.LPAREN, () => parseCallExpression),
 					Match.exhaustive,
-				);
-
-				return match(token);
-			}).pipe(Effect.withSpan("parser.getInfixParseFunction"));
+				),
+			).pipe(Effect.withSpan("parser.getInfixParseFunction"));
 
 		const parseLetStatement = Effect.gen(function* () {
 			const curToken = yield* getCurToken;
@@ -395,13 +392,13 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 		}).pipe(Effect.withSpan("parser.parseExpressionStatement"));
 
 		const parseStatement = (curToken: Token) =>
-			Effect.gen(function* () {
-				return yield* Match.value(curToken).pipe(
+			Match.value(curToken)
+				.pipe(
 					Match.when({ _tag: TokenType.LET }, () => parseLetStatement),
 					Match.when({ _tag: TokenType.RETURN }, () => parseReturnStatement),
 					Match.orElse(() => parseExpressionStatement),
-				);
-			}).pipe(Effect.withSpan("parser.parseStatement"));
+				)
+				.pipe(Effect.withSpan("parser.parseStatement"));
 
 		const parseProgram = Effect.gen(function* () {
 			const statements: Stmt[] = [];
