@@ -48,6 +48,7 @@ import {
 	STRING_OPERATOR_TO_FUNCTION_MAP,
 } from "./constants";
 
+// this error is what we pay for!!!
 const nodeEvalMatch = (env: Environment) =>
 	matchKnode({
 		Program: ({ statements }) =>
