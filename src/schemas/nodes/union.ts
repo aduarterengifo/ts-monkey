@@ -67,6 +67,10 @@ export const nodeString = (node: KNode): string =>
 			(arrayExp) =>
 				`[${arrayExp.elements.map((e) => nodeString(e)).join(", ")}]`,
 		),
+		Match.tag(
+			"IndexExp",
+			({ left, index }) => `(${nodeString(left)}[${nodeString(index)}])`,
+		),
 		Match.tag("BlockStmt", (blockStmt) =>
 			blockStmt.statements.map((stmt) => nodeString(stmt)).join("\n"),
 		),

@@ -1,3 +1,5 @@
+import { IndexExp } from "@/schemas/nodes/exps";
+import { ArrayExp } from "@/schemas/nodes/exps/array";
 import { Effect, Match, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import { BoolExp } from "src/schemas/nodes/exps/boolean";
@@ -75,9 +77,13 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 			token._tag === tokenType;
 
 		const peekTokenIs = (tokenType: TokenType) =>
-			Effect.gen(function* () {
-				return tokenIs(yield* getPeekToken, tokenType);
-			}).pipe(Effect.withSpan("parser.peekTokenIs"));
+			getPeekToken
+				.pipe(
+					Effect.flatMap((peekToken) =>
+						Effect.succeed(tokenIs(peekToken, tokenType)),
+					),
+				)
+				.pipe(Effect.withSpan("parser.peekTokenIs"));
 
 		const curTokenIs = (tokenType: TokenType) =>
 			getCurToken
@@ -226,6 +232,49 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 		const parseStringLiteral = (curToken: StringToken) =>
 			Effect.succeed(StrExp.make({ token: curToken, value: curToken.literal }));
 
+		const parseExpressionList = (end: TokenType) =>
+			Effect.gen(function* () {
+				if (yield* peekTokenIs(end)) {
+					yield* nextToken;
+					return [];
+				}
+
+				yield* nextToken;
+				const list = [yield* parseExpression(LOWEST)];
+
+				while (yield* peekTokenIs(TokenType.COMMA)) {
+					yield* nextToken;
+					yield* nextToken;
+					list.push(yield* parseExpression(LOWEST));
+				}
+
+				yield* expectPeek(end);
+
+				return list;
+			});
+
+		const parseArrayExp = () =>
+			Effect.all([getCurToken, parseExpressionList(TokenType.RBRACKET)]).pipe(
+				Effect.flatMap(([token, elements]) =>
+					Effect.succeed(ArrayExp.make({ token, elements })),
+				),
+			);
+
+		const parseIndexExp = (left: Exp) =>
+			Effect.gen(function* () {
+				const token = yield* getCurToken;
+				yield* nextToken;
+				const index = yield* parseExpression(LOWEST);
+
+				yield* expectPeek(TokenType.RBRACKET);
+
+				return IndexExp.make({ left, token, index });
+			});
+
+		// from the perpective of match _tags but this still I still need to hand make.
+		// normalize with current naming conventions
+		// I feel like I can go stricter with types but
+		// I don't want to mess up the whole exp that will turn into something that you will be ok with false negatives
 		const getPrefixParseFunction = (token: PrefixParseFnToken) =>
 			Match.value(token)
 				.pipe(
@@ -239,6 +288,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 					Match.tag(TokenType.MINUS, parsePrefixExpression),
 					Match.tag(TokenType.STRING, parseStringLiteral),
 					Match.tag(TokenType.LPAREN, parseGroupedExpression),
+					Match.tag(TokenType.LBRACKET, parseArrayExp),
 					Match.exhaustive,
 				)
 				.pipe(Effect.withSpan("parser.getPrefixParseFunction"));
@@ -298,35 +348,12 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 				yield* nextToken;
 			}).pipe(Effect.withSpan("parser.expectPeek"));
 
-		const parseCallArguments = Effect.gen(function* () {
-			const args: Exp[] = [];
-			if (yield* peekTokenIs(TokenType.RPAREN)) {
-				yield* nextToken;
-				return args;
-			}
-
-			yield* nextToken;
-
-			args.push(yield* parseExpression(LOWEST));
-
-			while (yield* peekTokenIs(TokenType.COMMA)) {
-				yield* nextToken;
-				yield* nextToken;
-
-				args.push(yield* parseExpression(LOWEST));
-			}
-
-			yield* expectPeek(TokenType.RPAREN);
-
-			return args;
-		});
-
 		const parseCallExpression = (fn: Exp) =>
 			Effect.gen(function* () {
 				return CallExp.make({
 					token: yield* getCurToken,
 					fn,
-					args: yield* parseCallArguments,
+					args: yield* parseExpressionList(TokenType.RPAREN),
 				});
 			});
 
@@ -343,6 +370,7 @@ export class Parser extends Effect.Service<Parser>()("Parser", {
 					Match.tag(TokenType.GT, () => parseInfixExpressions),
 					Match.tag(TokenType.EXPONENT, () => parseInfixExpressions),
 					Match.tag(TokenType.LPAREN, () => parseCallExpression),
+					Match.tag(TokenType.LBRACKET, () => parseIndexExp),
 					Match.exhaustive,
 				),
 			).pipe(Effect.withSpan("parser.getInfixParseFunction"));

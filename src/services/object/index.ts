@@ -17,6 +17,8 @@ export const isInfixObj = $is("InfixObj");
 
 export const objMatch = $match;
 
+// always safer to handle type by type instead of orElse, because if value changes type
+// compiler won't scream at you to remind you to handle that specific case.
 export const objInspect = (obj: Obj): string =>
 	Match.value(obj).pipe(
 		Match.tag("InfixObj", () => "infix obj"),
@@ -36,5 +38,9 @@ export const objInspect = (obj: Obj): string =>
 		Match.tag("BooleanObj", ({ value }) => `${value}`),
 		Match.tag("IntegerObj", ({ value }) => `${value}`),
 		Match.tag("StringObj", ({ value }) => value),
+		Match.tag(
+			"ArrayObj",
+			({ elements }) => `[${elements.map(objInspect).join(", ")}]`,
+		),
 		Match.exhaustive,
 	);

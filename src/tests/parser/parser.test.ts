@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import type { KennethEvalError } from "@/errors/kenneth/eval";
+import { IndexExp } from "@/schemas/nodes/exps";
+import { ArrayExp } from "@/schemas/nodes/exps/array";
 import { nodeString, tokenLiteral } from "@/schemas/nodes/union";
+import { expectIntExp } from "@/services/expectations/exp/eq";
 import { Effect, LogLevel, Logger, ManagedRuntime, Schema } from "effect";
 import { logDebug } from "effect/Effect";
 import type { ParseError } from "effect/ParseResult";
@@ -259,6 +263,46 @@ describe("parser", () => {
 
 		runTest(input, p);
 	});
+	test("array literals", () => {
+		const input = "[1, 2 * 2, 3 + 3]";
+
+		const p = (expStmt: ExpStmt) =>
+			Effect.gen(function* () {
+				const arrayExp = yield* Schema.decodeUnknown(ArrayExp)(
+					expStmt.expression,
+				);
+				expect(arrayExp.elements.length).toBe(3);
+				yield* expectIntExp(arrayExp.elements[0], 1);
+				yield* testInfixExpression(
+					arrayExp.elements[1],
+					2,
+					TokenType.ASTERISK,
+					2,
+				);
+				yield* testInfixExpression(
+					arrayExp.elements[1],
+					2,
+					TokenType.ASTERISK,
+					2,
+				);
+			});
+
+		runTest(input, p);
+	});
+	test("array literals", () => {
+		const input = "myArray[1 + 1]";
+
+		const p = (expStmt: ExpStmt) =>
+			Effect.gen(function* () {
+				const { left, index } = yield* Schema.decodeUnknown(IndexExp)(
+					expStmt.expression,
+				);
+				yield* testIdentifier(left, "myArray");
+				yield* testInfixExpression(index, 1, "+", 1);
+			});
+
+		runTest(input, p);
+	});
 });
 
 const getExpStmt = (input: string, optimized = false) =>
@@ -280,7 +324,11 @@ const runTest = (
 	input: string,
 	p: (
 		expStmt: ExpStmt,
-	) => Effect.Effect<void, ParseError | KennethParseError, Parser>,
+	) => Effect.Effect<
+		void,
+		ParseError | KennethParseError | KennethEvalError,
+		Parser
+	>,
 	optimized = false,
 ) =>
 	ManagedRuntime.make(Parser.Default).runPromise(

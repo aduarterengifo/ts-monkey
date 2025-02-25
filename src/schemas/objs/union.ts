@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+import { ArrayObj, type ArrayObjEncoded } from "./array";
 import { BooleanObj } from "./bool";
 import { BuiltInObj } from "./built-in";
 import { ErrorObj } from "./error";
@@ -20,13 +21,15 @@ export type Obj =
 	| ReturnObj
 	| StringObj
 	| IdentObj
-	| InfixObj;
+	| InfixObj
+	| ArrayObj;
 
 export type ObjEncoded =
-	| Exclude<Obj, FunctionObj | ReturnObj | InfixObj>
+	| Exclude<Obj, FunctionObj | ReturnObj | InfixObj | ArrayObj>
 	| FunctionObjEncoded
 	| ReturnObjEncoded
-	| InfixObjEncoded;
+	| InfixObjEncoded
+	| ArrayObjEncoded;
 
 export const Obj = Schema.suspend(
 	(): Schema.Schema<Obj, ObjEncoded> =>
@@ -41,5 +44,6 @@ export const Obj = Schema.suspend(
 			StringObj,
 			IdentObj,
 			InfixObj,
+			ArrayObj,
 		),
 );

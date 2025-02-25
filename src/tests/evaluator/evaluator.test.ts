@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { nodeString, tokenLiteral } from "@/schemas/nodes/union";
+import { ArrayObj } from "@/schemas/objs/array";
 import { ErrorObj } from "@/schemas/objs/error";
 import type { Obj } from "@/schemas/objs/union";
 import {
@@ -117,6 +118,14 @@ const testSuites: {
 						"add((((a + b) + ((c * d) / f)) + g))",
 					],
 					["5 ** 5 * 7", "((5 ** 5) * 7)"],
+					[
+						"a * [1, 2, 3, 4][b * c] * d",
+						"((a * ([1, 2, 3, 4][(b * c)])) * d)",
+					],
+					[
+						"add(a * b[2], b[1], 2 * [1, 2][1])",
+						"add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
+					],
 				],
 				fn: (expected: string) => (program: Program) =>
 					Effect.gen(function* () {
@@ -620,20 +629,29 @@ const testSuites: {
 				fn: (expected: number) => (evaluated: Obj) =>
 					testIntegerObject(evaluated, expected),
 			},
-			// {
-			// 	description: 'env',
-			// 	tests: [
-			// 		[
-			// 			'let a = 2; let c = fn(f) { f }; let b = c(fn(x) { x ** a });a = 3; b(2)',
-			// 			8,
-			// 		],
-			// 	],
-			// 	fn: (expected: number) => (evaluated: Obj) =>
-			// 		Effect.gen(function* () {
-			// 			yield* logDebug('eval', evaluated)
-			// 			yield* testIntegerObject(evaluated, expected)
-			// 		}),
-			// },
+			{
+				description: "array index exps",
+				tests: [
+					["[1, 2, 3][0]", 1],
+					["[1, 2, 3][1]", 2],
+					["[1, 2, 3][2]", 3],
+					["let i = 0; [1][i];", 1],
+					["[1, 2, 3][1 + 1];", 3],
+					["let myArray = [1, 2, 3]; myArray[2];", 3],
+					["let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6],
+					["let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2],
+					["[1, 2, 3][3]", null],
+					["[1, 2, 3][-1]", null],
+				],
+				fn: (expected: number | null) => (evaluated: Obj) =>
+					Effect.gen(function* () {
+						if (typeof expected === "number") {
+							yield* testIntegerObject(evaluated, expected);
+						} else {
+							yield* testNullOject(evaluated);
+						}
+					}),
+			},
 		],
 	},
 ];
@@ -757,6 +775,32 @@ describe("eval", () => {
 			if (isStringObj(evaluated)) {
 				expect(evaluated.value).toBe("Hello World!");
 			}
+		}).pipe(
+			Logger.withMinimumLogLevel(LogLevel.Debug),
+			Effect.withSpan("myspan"),
+		);
+
+		ManagedRuntime.make(Parser.Default).runPromise(program);
+	});
+
+	test("array exp", () => {
+		const input = "[1, 2 * 2, 3 + 3]";
+
+		const program = Effect.gen(function* () {
+			const parser = yield* Parser;
+			yield* parser.init(input);
+
+			const program = yield* parser.parseProgram;
+			const env = createEnvironment();
+			const evaluated = yield* Eval(program)(env);
+
+			const arrayObj = yield* Schema.decodeUnknown(ArrayObj)(evaluated);
+
+			expect(arrayObj.elements.length).toBe(3);
+
+			yield* testIntegerObject(arrayObj.elements[0], 1);
+			yield* testIntegerObject(arrayObj.elements[1], 4);
+			yield* testIntegerObject(arrayObj.elements[2], 6);
 		}).pipe(
 			Logger.withMinimumLogLevel(LogLevel.Debug),
 			Effect.withSpan("myspan"),
