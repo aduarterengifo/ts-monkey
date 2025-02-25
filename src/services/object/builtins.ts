@@ -114,8 +114,11 @@ export const builtInFnMap = {
 			const firstArg = args[0];
 
 			return yield* Match.value(firstArg).pipe(
-				Match.tag("StringObj", (strObj) =>
-					Effect.succeed(IntegerObj.make({ value: strObj.value.length })),
+				Match.tag("StringObj", ({ value }) =>
+					Effect.succeed(IntegerObj.make({ value: value.length })),
+				),
+				Match.tag("ArrayObj", ({ elements }) =>
+					Effect.succeed(elements.length),
 				),
 				Match.orElse(() =>
 					Effect.succeed(
