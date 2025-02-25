@@ -1,3 +1,6 @@
+import type { IndexExp } from "@/schemas/nodes/exps";
+import type { ArrayExp } from "@/schemas/nodes/exps/array";
+import { ArrayObj } from "@/schemas/objs/array";
 import { FALSE, TRUE, nativeBoolToObjectBool } from "@/schemas/objs/bool";
 import { BuiltInObj } from "@/schemas/objs/built-in";
 import { FunctionObj } from "@/schemas/objs/function";
@@ -29,6 +32,7 @@ import { KennethEvalError } from "../../errors/kenneth/eval";
 import type { InfixOperator } from "../../schemas/infix-operator";
 import { diffPolynomial } from "../diff/obj";
 import {
+	isErrorObj,
 	isIdentObj,
 	isInfixObj,
 	isIntegerObj,
@@ -94,6 +98,34 @@ const nodeEvalMatch = (env: Environment) =>
 			),
 		StrExp: ({ value }) => Effect.succeed(StringObj.make({ value })),
 		DiffExp: (diffExp) => evalDiff(diffExp)(env),
+		ArrayExp: (arrayExp) => evalArrayExp(arrayExp)(env),
+		IndexExp: (indexExp) => evalIndexExp(indexExp)(env),
+	});
+
+const evalIndexExp = (indexExp: IndexExp) => (env: Environment) =>
+	Effect.all([Eval(indexExp.left)(env), Eval(indexExp.index)(env)]).pipe(
+		Effect.flatMap(([left, index]) =>
+			Effect.all([
+				Schema.decodeUnknown(ArrayObj)(left),
+				Schema.decodeUnknown(IntegerObj)(index),
+			]).pipe(
+				Effect.flatMap(([{ elements }, { value }]) =>
+					Schema.decodeUnknown(
+						Schema.Number.pipe(Schema.between(0, elements.length - 1)),
+					)(value).pipe(Effect.flatMap((idx) => Effect.succeed(elements[idx]))),
+				),
+			),
+		),
+	);
+
+const evalArrayExp = (arrayExp: ArrayExp) => (env: Environment) =>
+	Effect.gen(function* () {
+		const elements = yield* evalExpressions(arrayExp.elements, env);
+
+		if (elements.length === 1 && isErrorObj(elements[0])) {
+			return elements[0];
+		}
+		return ArrayObj.make({ elements });
 	});
 
 export const Eval =
