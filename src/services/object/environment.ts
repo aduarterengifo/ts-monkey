@@ -54,9 +54,12 @@ export const createEnvironment = (outer?: Environment | undefined) =>
 
 export const printStore = (env: Environment): string => {
 	let output = "Environment Store:\n";
-	env.store.forEach((value, key) => {
-		output += `${key}: ${objInspect(value)}\n`;
-	});
+	for (const key in env.store) {
+		if (key in env.store) {
+			const value = env.store[key];
+			output += `${key}: ${objInspect(value)}\n`;
+		}
+	}
 
 	if (env.outer) {
 		output += "\nOuter Environment:\n";

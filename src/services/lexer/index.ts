@@ -199,11 +199,11 @@ export class Lexer extends Effect.Service<Lexer>()("Lexer", {
 							),
 							Match.when(
 								TokenType.LBRACKET,
-								newTokenAndReadChar(TokenType.COMMA),
+								newTokenAndReadChar(TokenType.LBRACKET),
 							),
 							Match.when(
 								TokenType.RBRACKET,
-								newTokenAndReadChar(TokenType.COMMA),
+								newTokenAndReadChar(TokenType.RBRACKET),
 							),
 							Match.when(TokenType.COMMA, newTokenAndReadChar(TokenType.COMMA)),
 							Match.when(TokenType.PLUS, newTokenAndReadChar(TokenType.PLUS)),

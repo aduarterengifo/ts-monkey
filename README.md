@@ -32,3 +32,4 @@ with extensions for symbolic differentiation.
 - [ ] partial derivatives 
     -  [ ] pass ident as second arg. 
 - [ ] release as package
+- [ ] errors should error
