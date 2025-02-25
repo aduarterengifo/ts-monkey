@@ -35,7 +35,10 @@ export interface EnvironmentEncoded {
 }
 
 export const Environment = Schema.Struct({
-	store: Schema.Record({ key: Schema.String, value: Obj }),
+	store: Schema.Record({
+		key: Schema.String,
+		value: Schema.suspend((): Schema.Schema<Obj, ObjEncoded> => Obj),
+	}),
 	idents: Schema.Array(IdentExp),
 	outer: Schema.Union(
 		Schema.suspend(
