@@ -118,7 +118,7 @@ export const builtInFnMap = {
 					Effect.succeed(IntegerObj.make({ value: value.length })),
 				),
 				Match.tag("ArrayObj", ({ elements }) =>
-					Effect.succeed(elements.length),
+					Effect.succeed(IntegerObj.make({ value: elements.length })),
 				),
 				Match.orElse(() =>
 					Effect.succeed(
