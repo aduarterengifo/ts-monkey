@@ -12,6 +12,7 @@ export default defineConfig({
 		alias: {
 			"@template/basic/test": path.join(__dirname, "test"),
 			"@template/basic": path.join(__dirname, "src"),
+			"@": path.resolve(__dirname, "./src"),
 		},
 	},
 });
