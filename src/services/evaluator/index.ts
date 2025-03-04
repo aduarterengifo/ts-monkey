@@ -1,8 +1,12 @@
 import type { IndexExp } from "@/schemas/nodes/exps";
 import type { ArrayExp } from "@/schemas/nodes/exps/array";
+import { CallExp } from "@/schemas/nodes/exps/call";
+import { FuncExp } from "@/schemas/nodes/exps/function";
+import { ExpStmt } from "@/schemas/nodes/stmts/exp";
 import { ArrayObj } from "@/schemas/objs/array";
 import { FALSE, TRUE, nativeBoolToObjectBool } from "@/schemas/objs/bool";
-import { BuiltInObj } from "@/schemas/objs/built-in";
+import { BuiltInDiffObj, BuiltInObj } from "@/schemas/objs/built-in";
+import { CallObj } from "@/schemas/objs/call";
 import { FunctionObj } from "@/schemas/objs/function";
 import { IdentObj } from "@/schemas/objs/ident";
 import { InfixObj } from "@/schemas/objs/infix";
@@ -12,19 +16,20 @@ import { ReturnObj } from "@/schemas/objs/return";
 import { StringObj } from "@/schemas/objs/string";
 import type { Obj } from "@/schemas/objs/union";
 import { PolynomialObj } from "@/schemas/objs/unions/polynomials";
-import { Effect, Match, Schema } from "effect";
+import { fnTokenSchema } from "@/schemas/token/function-literal";
+import { Effect, Either, Match, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import type { KennethParseError } from "src/errors/kenneth/parse";
 import type { DiffExp } from "src/schemas/nodes/exps/diff";
-import { type IdentExp, IdentExpEq } from "src/schemas/nodes/exps/ident";
+import { IdentExp, IdentExpEq } from "src/schemas/nodes/exps/ident";
 import type { IfExp } from "src/schemas/nodes/exps/if";
 import { OpInfixExp } from "src/schemas/nodes/exps/infix";
 import { nativeToIntExp } from "src/schemas/nodes/exps/int";
-import type { Exp } from "src/schemas/nodes/exps/union";
+import { type Exp, isIdentExp } from "src/schemas/nodes/exps/union";
 import type { Program } from "src/schemas/nodes/program";
-import type { BlockStmt } from "src/schemas/nodes/stmts/block";
+import { BlockStmt } from "src/schemas/nodes/stmts/block";
 import type { Stmt } from "src/schemas/nodes/stmts/union";
-import { type KNode, matchKnode } from "src/schemas/nodes/union";
+import { type KNode, matchKnode, nodeString } from "src/schemas/nodes/union";
 import type { PrefixOperator } from "src/schemas/prefix-operator";
 import { TokenType } from "src/schemas/token-types/union";
 import type { Token } from "src/schemas/token/unions/all";
@@ -38,6 +43,7 @@ import {
 	isIntegerObj,
 	isReturnObj,
 	isStringObj,
+	objInspect,
 } from "../object";
 import { builtInFnMap } from "../object/builtins";
 import {
@@ -58,9 +64,17 @@ const nodeEvalMatch = (env: Environment) =>
 		Program: ({ statements }) =>
 			evalProgram(statements, env).pipe(Effect.map(unwrapReturnvalue)),
 		IdentExp: (ident) =>
-			env.idents.some((id) => IdentExpEq(id, ident))
-				? Effect.succeed(IdentObj.make({ identExp: ident }))
-				: evalIdentExpression(ident, env),
+			Effect.gen(function* () {
+				yield* Effect.log(
+					`eval identExp ${env.idents[0]?.value} vs ${ident.value}`,
+				);
+				if (env.idents.some((id) => IdentExpEq(id, ident))) {
+					yield* Effect.log(`ident: ${nodeString(ident)} is contaminated`);
+					return yield* Effect.succeed(IdentObj.make({ identExp: ident }));
+				}
+				yield* Effect.log(`evaluating ident: ${nodeString(ident)}`);
+				return yield* evalIdentExpression(ident, env);
+			}),
 		LetStmt: ({ value, name }) =>
 			Effect.gen(function* () {
 				const val = yield* Eval(value)(env);
@@ -93,7 +107,24 @@ const nodeEvalMatch = (env: Environment) =>
 				Effect.flatMap(([fnEval, argsEval]) =>
 					Schema.decodeUnknown(Schema.Union(FunctionObj, BuiltInObj))(
 						fnEval,
-					).pipe(Effect.flatMap((obj) => applyFunction(obj)(argsEval))),
+					).pipe(
+						Effect.flatMap((obj) =>
+							Effect.gen(function* () {
+								const identoverlap = env.idents.some((ident) =>
+									args.some(
+										(arg) => isIdentExp(arg) && ident.value === arg.value,
+									),
+								);
+
+								const either =
+									Schema.decodeUnknownEither(BuiltInDiffObj)(fnEval);
+
+								return yield* Either.isRight(either) && identoverlap
+									? Effect.succeed(CallObj.make({ fn: either.right, args }))
+									: applyFunction(obj)(argsEval);
+							}),
+						),
+					),
 				),
 			),
 		StrExp: ({ value }) => Effect.succeed(StringObj.make({ value })),
@@ -149,10 +180,12 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 			outer: env.outer,
 			idents: [...env.idents, ...diffExp.params],
 		});
+		yield* Effect.log("soft eval:");
 		const softEval = yield* Eval(diffExp.exp)(newEnv).pipe(
 			Effect.flatMap(Schema.decodeUnknown(PolynomialObj)),
 		);
 
+		yield* Effect.log("diff:");
 		const diffSoftEval = yield* diffPolynomial(softEval, diffExp.params[0]);
 
 		// maybe simplest will be to convert back to exp and Eval.
@@ -173,6 +206,52 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 						Effect.flatMap(([leftVal, rightVal]) =>
 							Effect.succeed(OpInfixExp(operator)(leftVal)(rightVal)),
 						),
+					),
+				),
+				Match.tag("CallObj", ({ fn, args }) =>
+					Effect.succeed(
+						CallExp.make({
+							token: { _tag: "fn", literal: "fn" },
+							fn: FuncExp.make({
+								token: { _tag: "fn", literal: "fn" },
+								parameters: diffExp.params, // LIMITATION TO A SINGLE VARIABLE FUNCTIONS.
+								body: BlockStmt.make({
+									token: { _tag: "!", literal: "!" }, // FIX eventually
+									statements: [
+										ExpStmt.make({
+											token: {
+												_tag: "!",
+												literal: "!",
+											},
+											expression: CallExp.make({
+												token: {
+													_tag: "!",
+													literal: "!",
+												},
+												fn: Match.value(fn).pipe(
+													Match.tag("BuiltInObj", ({ fn }) =>
+														IdentExp.make({
+															token: { _tag: "IDENT", literal: fn },
+															value: fn,
+														}),
+													),
+													Match.tag("FunctionObj", ({ params, body }) =>
+														FuncExp.make({
+															token: fnTokenSchema.make({ literal: "fn" }),
+															parameters: params,
+															body,
+														}),
+													),
+													Match.exhaustive,
+												),
+												args,
+											}),
+										}),
+									],
+								}),
+							}),
+							args,
+						}),
 					),
 				),
 				Match.exhaustive,

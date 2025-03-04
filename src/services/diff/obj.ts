@@ -1,3 +1,13 @@
+import { BuiltInDiffFunc } from "@/schemas/built-in/special";
+import { CallExp } from "@/schemas/nodes/exps/call";
+import { OpInfixExp } from "@/schemas/nodes/exps/infix";
+import { nativeToIntExp } from "@/schemas/nodes/exps/int";
+import { PrefixExp } from "@/schemas/nodes/exps/prefix";
+import { BlockStmt } from "@/schemas/nodes/stmts/block";
+import { ExpStmt } from "@/schemas/nodes/stmts/exp";
+import { BuiltInObj } from "@/schemas/objs/built-in";
+import { CallObj } from "@/schemas/objs/call";
+import { FunctionObj } from "@/schemas/objs/function";
 import { IdentObj } from "@/schemas/objs/ident";
 import { InfixObj } from "@/schemas/objs/infix";
 import { IntegerObj, ONE } from "@/schemas/objs/int";
@@ -14,10 +24,11 @@ import { Effect, Match, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
 import { KennethParseError } from "../../errors/kenneth/parse";
 import {
-	type IdentExp,
+	IdentExp,
 	expectIdentEquivalence,
 } from "../../schemas/nodes/exps/ident";
 import { TokenType } from "../../schemas/token-types/union";
+import { createEnvironment } from "../object/environment";
 
 const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 	Match.value(exp).pipe(
@@ -78,6 +89,43 @@ const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 				),
 			),
 		),
+		Match.tag("CallObj", ({ fn, args }) =>
+			Schema.decodeUnknown(BuiltInObj)(fn).pipe(
+				Effect.flatMap((fn) =>
+					Schema.decodeUnknown(BuiltInDiffFunc)(fn.fn).pipe(
+						Effect.flatMap((diffFn) =>
+							Match.value(diffFn).pipe(
+								Match.when("sin", () =>
+									Effect.succeed(
+										CallObj.make({
+											fn: BuiltInObj.make({ fn: "cos" }),
+											args,
+										}),
+									),
+								),
+								Match.when("cos", () =>
+									Effect.succeed(
+										CallObj.make({
+											fn: BuiltInObj.make({ fn: "cos" }),
+											args,
+										}),
+									),
+								),
+								Match.when("tan", () =>
+									Effect.succeed(
+										CallObj.make({
+											fn: BuiltInObj.make({ fn: "cos" }),
+											args,
+										}),
+									),
+								),
+								Match.exhaustive,
+							),
+						),
+					),
+				),
+			),
+		),
 		Match.exhaustive,
 	);
 
@@ -87,6 +135,110 @@ export const diffPolynomial = (
 ): Effect.Effect<PolynomialObj, ParseError | KennethParseError, never> =>
 	Match.value(obj).pipe(
 		Match.tag("IntegerObj", () => constantRule()), // leaf
+		Match.tag("CallObj", ({ fn, args }) =>
+			Schema.decodeUnknown(BuiltInObj)(fn).pipe(
+				Effect.flatMap((fn) =>
+					Schema.decodeUnknown(BuiltInDiffFunc)(fn.fn).pipe(
+						Effect.flatMap((diffFn) =>
+							Match.value(diffFn).pipe(
+								Match.when("sin", () =>
+									Effect.succeed(
+										CallObj.make({
+											fn: BuiltInObj.make({ fn: "cos" }),
+											args,
+										}),
+									),
+								),
+								Match.when("cos", () =>
+									Effect.succeed(
+										CallObj.make({
+											fn: FunctionObj.make({
+												env: createEnvironment(),
+												params: [x],
+												body: BlockStmt.make({
+													token: { _tag: "!", literal: "!" },
+													statements: [
+														ExpStmt.make({
+															token: {
+																_tag: "!",
+																literal: "!",
+															},
+															expression: PrefixExp.make({
+																token: {
+																	_tag: "-",
+																	literal: "-",
+																},
+																operator: "-",
+																right: CallExp.make({
+																	token: {
+																		_tag: "(",
+																		literal: "(",
+																	},
+																	fn: IdentExp.make({
+																		token: {
+																			_tag: "IDENT",
+																			literal: "sin",
+																		},
+																		value: "sin",
+																	}),
+																	args: [x],
+																}),
+															}),
+														}),
+													],
+												}),
+											}),
+											args,
+										}),
+									),
+								),
+								Match.when("tan", () =>
+									Effect.succeed(
+										CallObj.make({
+											fn: FunctionObj.make({
+												env: createEnvironment(),
+												params: [x],
+												body: BlockStmt.make({
+													token: { _tag: "!", literal: "!" },
+													statements: [
+														ExpStmt.make({
+															token: {
+																_tag: "!",
+																literal: "!",
+															},
+															expression: OpInfixExp("/")(nativeToIntExp(1))(
+																OpInfixExp("**")(
+																	CallExp.make({
+																		token: {
+																			_tag: "(",
+																			literal: "(",
+																		},
+																		fn: IdentExp.make({
+																			token: {
+																				_tag: "IDENT",
+																				literal: "cos",
+																			},
+																			value: "cos",
+																		}),
+																		args: [x],
+																	}),
+																)(nativeToIntExp(2)),
+															),
+														}),
+													],
+												}),
+											}),
+											args,
+										}),
+									),
+								),
+								Match.exhaustive,
+							),
+						),
+					),
+				),
+			),
+		),
 		Match.tag("IdentObj", () => Effect.succeed(powerRule(ONE, ONE, x))), // leaf
 		Match.tag("InfixObj", ({ left, operator, right }) =>
 			Effect.all([

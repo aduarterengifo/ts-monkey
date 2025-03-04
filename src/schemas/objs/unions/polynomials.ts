@@ -3,16 +3,21 @@ import { TokenType } from "@/schemas/token-types/union";
 import { diffPolynomial } from "@/services/diff/obj";
 import { Effect, Match, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
+import { CallObj, type CallObjEncoded } from "../call";
 import { IdentObj } from "../ident";
 import { InfixObj, type InfixObjEncoded, OpInfixObj } from "../infix";
 import { IntegerObj } from "../int";
 
-export type PolynomialObj = IntegerObj | IdentObj | InfixObj;
-export type PolynomialObjEncoded = IntegerObj | IdentObj | InfixObjEncoded;
+export type PolynomialObj = IntegerObj | IdentObj | InfixObj | CallObj;
+export type PolynomialObjEncoded =
+	| IntegerObj
+	| IdentObj
+	| InfixObjEncoded
+	| CallObjEncoded;
 
 export const PolynomialObj = Schema.suspend(
 	(): Schema.Schema<PolynomialObj, PolynomialObjEncoded> =>
-		Schema.Union(IntegerObj, IdentObj, InfixObj),
+		Schema.Union(IntegerObj, IdentObj, InfixObj, CallObj),
 );
 
 export const newTerm = (coeff: number, x: IdentObj, power: number) =>
@@ -120,6 +125,9 @@ export const recursivelySubstitute = (
 					),
 				),
 			),
+		),
+		Match.tag("CallObj", ({ fn }) =>
+			Effect.succeed(CallObj.make({ fn, args: [g] })),
 		),
 		Match.exhaustive,
 	);
