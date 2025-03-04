@@ -36,4 +36,10 @@ export const examples = [
 	["exp(e())"],
 	["exp(1)"],
 	["ln(exp(3))"],
+	["diff(fn(x) {sin(x)})(0)"],
+	["diff(fn(x) {sin(x)})(pi() / 2)"],
+	["diff(fn(x) {cos(x)})(0)"],
+	["diff(fn(x) {cos(x)})(pi() / 2)"],
+	["diff(fn(x) {tan(x)})(0)"],
+	["diff(fn(x) {tan(x)})(pi() / 4)"],
 ];
