@@ -2,6 +2,7 @@ import { Schema } from "effect";
 import { ArrayObj, type ArrayObjEncoded } from "./array";
 import { BooleanObj } from "./bool";
 import { BuiltInObj } from "./built-in";
+import { CallObj, type CallObjEncoded } from "./call";
 import { ErrorObj } from "./error";
 import { FunctionObj, type FunctionObjEncoded } from "./function";
 import { IdentObj } from "./ident";
@@ -22,14 +23,16 @@ export type Obj =
 	| StringObj
 	| IdentObj
 	| InfixObj
-	| ArrayObj;
+	| ArrayObj
+	| CallObj;
 
 export type ObjEncoded =
 	| Exclude<Obj, FunctionObj | ReturnObj | InfixObj | ArrayObj>
 	| FunctionObjEncoded
 	| ReturnObjEncoded
 	| InfixObjEncoded
-	| ArrayObjEncoded;
+	| ArrayObjEncoded
+	| CallObjEncoded;
 
 export const Obj = Schema.suspend(
 	(): Schema.Schema<Obj, ObjEncoded> =>
@@ -45,5 +48,6 @@ export const Obj = Schema.suspend(
 			IdentObj,
 			InfixObj,
 			ArrayObj,
+			CallObj,
 		),
 );
