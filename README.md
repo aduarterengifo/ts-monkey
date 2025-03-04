@@ -25,7 +25,7 @@ with extensions for symbolic differentiation.
 - [ ] hashes
 - [ ] diff multi-statement functions 
 - [ ] graph functions 
-- [ ] trig derivatives
+- [x] trig derivatives
   - [ ] integrate with chain rule
 - [ ] exp/ln derivatives 
   - [ ] integrate with chain rule
