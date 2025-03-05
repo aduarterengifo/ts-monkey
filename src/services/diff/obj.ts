@@ -1,4 +1,4 @@
-import { BuiltInDiffFunc } from "@/schemas/built-in/special";
+import { BuiltInDiffFunc } from "@/schemas/built-in/diff";
 import { CallExp } from "@/schemas/nodes/exps/call";
 import { OpInfixExp } from "@/schemas/nodes/exps/infix";
 import { nativeToIntExp } from "@/schemas/nodes/exps/int";

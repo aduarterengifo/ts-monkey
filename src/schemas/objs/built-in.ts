@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 import { BuiltInFunc } from "../built-in";
-import { BuiltInDiffFunc } from "../built-in/special";
+import { BuiltInDiffFunc } from "../built-in/diff";
 
 const fields = {
 	fn: BuiltInFunc, //repeated
