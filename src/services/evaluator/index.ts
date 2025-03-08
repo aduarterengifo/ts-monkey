@@ -65,14 +65,10 @@ const nodeEvalMatch = (env: Environment) =>
 			evalProgram(statements, env).pipe(Effect.map(unwrapReturnvalue)),
 		IdentExp: (ident) =>
 			Effect.gen(function* () {
-				yield* Effect.log(
-					`eval identExp ${env.idents[0]?.value} vs ${ident.value}`,
-				);
 				if (env.idents.some((id) => IdentExpEq(id, ident))) {
 					yield* Effect.log(`ident: ${nodeString(ident)} is contaminated`);
 					return yield* Effect.succeed(IdentObj.make({ identExp: ident }));
 				}
-				yield* Effect.log(`evaluating ident: ${nodeString(ident)}`);
 				return yield* evalIdentExpression(ident, env);
 			}),
 		LetStmt: ({ value, name }) =>

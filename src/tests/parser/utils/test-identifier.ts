@@ -4,7 +4,7 @@ import { KennethParseError } from "src/errors/kenneth/parse";
 import type { Exp } from "src/schemas/nodes/exps/union";
 import { isIdentExpression } from "src/services/ast";
 
-export const testIdentifier = (expression: Exp, value: string) =>
+export const testIdentExp = (expression: Exp, value: string) =>
 	Effect.gen(function* () {
 		return yield* !isIdentExpression(expression)
 			? new KennethParseError({

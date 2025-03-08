@@ -25,8 +25,8 @@ import { isErrorObj, isFunctionObj, isStringObj } from "src/services/object";
 import { createEnvironment } from "src/services/object/environment";
 import { Parser } from "src/services/parser";
 import { testLetStatement } from "../parser/statements/let";
-import { testIdentifier } from "../parser/utils/test-identifier";
-import { testInfixExpression } from "../parser/utils/test-infix-expression";
+import { testIdentExp } from "../parser/utils/test-identifier";
+import { testInfixExp } from "../parser/utils/test-infix-expression";
 import { testLiteralExpression } from "../parser/utils/test-literal-expression";
 import {
 	testBooleanObject,
@@ -229,7 +229,7 @@ const testSuites: {
 								expStmt.expression,
 							);
 
-							yield* testIdentifier(callExp.fn, expected.ident);
+							yield* testIdentExp(callExp.fn, expected.ident);
 
 							expect(callExp.args.length).toBe(expected.args.length);
 							expected.args.forEach((expectedArg, i) => {
@@ -271,7 +271,7 @@ const testSuites: {
 								Schema.Tuple(ExpStmt),
 							)(program.statements);
 
-							testInfixExpression(
+							testInfixExp(
 								expStmt.expression,
 								expected.left,
 								expected.operator,

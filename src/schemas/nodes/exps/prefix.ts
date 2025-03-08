@@ -18,3 +18,13 @@ export const PrefixExp = Schema.TaggedStruct("PrefixExp", {
 	operator: prefixOperatorSchema,
 	right: Schema.suspend((): Schema.Schema<Exp> => Exp),
 });
+
+export const opPrefixExp = (op: PrefixOperator) => (right: Exp) =>
+	PrefixExp.make({
+		token: {
+			_tag: op,
+			literal: op,
+		},
+		operator: op,
+		right,
+	});

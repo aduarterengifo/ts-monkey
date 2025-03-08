@@ -3,9 +3,8 @@ import type { KennethEvalError } from "@/errors/kenneth/eval";
 import { IndexExp } from "@/schemas/nodes/exps";
 import { ArrayExp } from "@/schemas/nodes/exps/array";
 import { nodeString, tokenLiteral } from "@/schemas/nodes/union";
-import { expectIntExp } from "@/services/expectations/exp/eq";
+import { expectIntExpEq } from "@/services/expectations/exp/eq";
 import { Effect, LogLevel, Logger, ManagedRuntime, Schema } from "effect";
-import { logDebug } from "effect/Effect";
 import type { ParseError } from "effect/ParseResult";
 import type { KennethParseError } from "src/errors/kenneth/parse";
 import { BoolExp } from "src/schemas/nodes/exps/boolean";
@@ -22,8 +21,8 @@ import { LetStmt } from "src/schemas/nodes/stmts/let";
 import { ReturnStmt } from "src/schemas/nodes/stmts/return";
 import { TokenType } from "src/schemas/token-types/union";
 import { Parser } from "src/services/parser";
-import { testIdentifier } from "./utils/test-identifier";
-import { testInfixExpression } from "./utils/test-infix-expression";
+import { testIdentExp } from "./utils/test-identifier";
+import { testInfixExp } from "./utils/test-infix-expression";
 import { testIntExp } from "./utils/test-int-exp";
 import { testLiteralExpression } from "./utils/test-literal-expression";
 import { testStrExp } from "./utils/test-str-exp";
@@ -84,13 +83,13 @@ describe("parser", () => {
 			Effect.gen(function* () {
 				const ifExp = yield* Schema.decodeUnknown(IfExp)(expStmt.expression);
 
-				yield* testInfixExpression(ifExp.condition, "x", "<", "y");
+				yield* testInfixExp(ifExp.condition, "x", "<", "y");
 
 				const [consequence] = yield* Schema.decodeUnknown(
 					Schema.Tuple(ExpStmt),
 				)(ifExp.consequence.statements);
 
-				yield* testIdentifier(consequence.expression, "x");
+				yield* testIdentExp(consequence.expression, "x");
 
 				expect(ifExp.alternative).toBeUndefined();
 			});
@@ -104,19 +103,19 @@ describe("parser", () => {
 			Effect.gen(function* () {
 				const ifExp = yield* Schema.decodeUnknown(IfExp)(expStmt.expression);
 
-				yield* testInfixExpression(ifExp.condition, "x", "<", "y");
+				yield* testInfixExp(ifExp.condition, "x", "<", "y");
 
 				const [consequence] = yield* Schema.decodeUnknown(
 					Schema.Tuple(ExpStmt),
 				)(ifExp.consequence.statements);
 
-				yield* testIdentifier(consequence.expression, "x");
+				yield* testIdentExp(consequence.expression, "x");
 
 				const [alternative] = yield* Schema.decodeUnknown(
 					Schema.Tuple(ExpStmt),
 				)(ifExp.alternative?.statements);
 
-				yield* testIdentifier(alternative.expression, "y");
+				yield* testIdentExp(alternative.expression, "y");
 			});
 
 		runTest(input, program);
@@ -135,7 +134,7 @@ describe("parser", () => {
 			Effect.gen(function* () {
 				const ifExp = yield* Schema.decodeUnknown(IfExp)(expStmt.expression);
 
-				yield* testInfixExpression(ifExp.condition, "11", ">", "1");
+				yield* testInfixExp(ifExp.condition, "11", ">", "1");
 				expect(ifExp.consequence.statements.length).toBe(2);
 
 				const [consequence1, consequence2] = yield* Schema.decodeUnknown(
@@ -150,7 +149,7 @@ describe("parser", () => {
 					InfixExp,
 				)(consequence1IfExp.condition);
 
-				yield* testInfixExpression(consequence1IfExpCondition, "10", ">", "1");
+				yield* testInfixExp(consequence1IfExpCondition, "10", ">", "1");
 				expect(consequence1IfExp.consequence.statements.length).toBe(1);
 
 				const [innerFirstConsequence] = yield* Schema.decodeUnknown(
@@ -188,7 +187,7 @@ describe("parser", () => {
 				const infixExp = yield* Schema.decodeUnknown(InfixExp)(
 					bodyExpStmt.expression,
 				);
-				testInfixExpression(infixExp, "x", "+", "y");
+				testInfixExp(infixExp, "x", "+", "y");
 			});
 
 		runTest(input, program);
@@ -202,13 +201,13 @@ describe("parser", () => {
 					expStmt.expression,
 				);
 
-				yield* testIdentifier(callExp.fn, "add");
+				yield* testIdentExp(callExp.fn, "add");
 
 				expect(callExp.args.length).toBe(3);
 
 				testLiteralExpression(callExp.args[0], 1);
-				testInfixExpression(callExp.args[1], 2, TokenType.ASTERISK, 3);
-				testInfixExpression(callExp.args[2], 4, TokenType.PLUS, 5);
+				testInfixExp(callExp.args[1], 2, TokenType.ASTERISK, 3);
+				testInfixExp(callExp.args[2], 4, TokenType.PLUS, 5);
 			});
 
 		runTest(input, program);
@@ -272,19 +271,9 @@ describe("parser", () => {
 					expStmt.expression,
 				);
 				expect(arrayExp.elements.length).toBe(3);
-				yield* expectIntExp(arrayExp.elements[0], 1);
-				yield* testInfixExpression(
-					arrayExp.elements[1],
-					2,
-					TokenType.ASTERISK,
-					2,
-				);
-				yield* testInfixExpression(
-					arrayExp.elements[1],
-					2,
-					TokenType.ASTERISK,
-					2,
-				);
+				yield* expectIntExpEq(arrayExp.elements[0], 1);
+				yield* testInfixExp(arrayExp.elements[1], 2, TokenType.ASTERISK, 2);
+				yield* testInfixExp(arrayExp.elements[1], 2, TokenType.ASTERISK, 2);
 			});
 
 		runTest(input, p);
@@ -297,8 +286,8 @@ describe("parser", () => {
 				const { left, index } = yield* Schema.decodeUnknown(IndexExp)(
 					expStmt.expression,
 				);
-				yield* testIdentifier(left, "myArray");
-				yield* testInfixExpression(index, 1, "+", 1);
+				yield* testIdentExp(left, "myArray");
+				yield* testInfixExp(index, 1, "+", 1);
 			});
 
 		runTest(input, p);

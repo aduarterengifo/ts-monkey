@@ -1,6 +1,7 @@
 // TODO: call exp for soft eval of trig functions.
 
 import { Schema } from "effect";
+import type { BuiltInFunc } from "../built-in";
 import { Exp } from "../nodes/exps/union";
 import { BuiltInObj } from "./built-in";
 import { FunctionObj, type FunctionObjEncoded } from "./function";
@@ -26,3 +27,9 @@ export const CallObj = Schema.TaggedStruct("CallObj", {
 	),
 	args: Schema.Array(Schema.suspend((): Schema.Schema<Exp> => Exp)),
 });
+
+export const BuiltInCallObj = (fn: BuiltInFunc) => (args: readonly Exp[]) =>
+	CallObj.make({
+		fn: BuiltInObj.make({ fn }),
+		args,
+	});

@@ -5,6 +5,6 @@ import { StrExp } from "../str";
 
 export type ConstantExp = IntExp | StrExp | BoolExp;
 
-export const constantExpSchema = Schema.suspend(
+export const ConstantExp = Schema.suspend(
 	(): Schema.Schema<ConstantExp> => Schema.Union(IntExp, StrExp, BoolExp),
 );
