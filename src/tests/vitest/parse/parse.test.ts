@@ -75,4 +75,28 @@ describe("parse", () => {
 			expect(alternative).toBeUndefined();
 		}).pipe(Effect.provide(defaultLayer)),
 	);
+	it.effect("if else expression", () =>
+		Effect.gen(function* () {
+			const exp = yield* getExpFromProgram("if (x < y) { x } else { y }");
+			const {
+				condition,
+				alternative,
+				consequence: { statements },
+			} = yield* Schema.decodeUnknown(IfExp)(exp);
+
+			yield* testInfixExp(condition, "x", TokenType.LT, "y");
+
+			const [{ expression }] = yield* Schema.decodeUnknown(
+				Schema.Tuple(ExpStmt),
+			)(statements);
+
+			yield* expectIdentExpEq(expression, "x");
+
+			const [{ expression: altExp }] = yield* Schema.decodeUnknown(
+				Schema.Tuple(ExpStmt),
+			)(alternative?.statements);
+
+			yield* expectIdentExpEq(altExp, "y");
+		}).pipe(Effect.provide(defaultLayer)),
+	);
 });
