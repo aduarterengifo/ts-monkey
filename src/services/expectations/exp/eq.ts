@@ -13,7 +13,9 @@ export const expectIdentExpEq = (exp: Exp, expected: string) =>
 		Effect.filterOrFail(
 			(exp) => exp.value === expected,
 			(exp) =>
-				new KennethEvalError({ message: `Expected '${exp}' but got '${exp}'` }),
+				new KennethEvalError({
+					message: `Expected '${expected}' but got '${exp.value}'`,
+				}),
 		),
 	);
 
