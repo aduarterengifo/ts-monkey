@@ -6,7 +6,7 @@ import { StrExp } from "@/schemas/nodes/exps/str";
 import type { Exp } from "@/schemas/nodes/exps/union";
 import { Effect, Schema, pipe } from "effect";
 
-export const expectIdentExp = (exp: Exp, expected: string) =>
+export const expectIdentExpEq = (exp: Exp, expected: string) =>
 	pipe(
 		exp,
 		Schema.decodeUnknown(IdentExp),
@@ -17,7 +17,7 @@ export const expectIdentExp = (exp: Exp, expected: string) =>
 		),
 	);
 
-export const expectStrExp = (exp: Exp, expected: string) =>
+export const expectStrExpEq = (exp: Exp, expected: string) =>
 	pipe(
 		exp,
 		Schema.decodeUnknown(StrExp),
@@ -30,7 +30,7 @@ export const expectStrExp = (exp: Exp, expected: string) =>
 		),
 	);
 
-export const expectIntExp = (exp: Exp, expected: number) =>
+export const expectIntExpEq = (exp: Exp, expected: number) =>
 	pipe(
 		exp,
 		Schema.decodeUnknown(IntExp),
@@ -43,7 +43,7 @@ export const expectIntExp = (exp: Exp, expected: number) =>
 		),
 	);
 
-export const expectBooleanExp = (exp: Exp, expected: boolean) =>
+export const expectBooleanExpEq = (exp: Exp, expected: boolean) =>
 	pipe(
 		exp,
 		Schema.decodeUnknown(BoolExp),
