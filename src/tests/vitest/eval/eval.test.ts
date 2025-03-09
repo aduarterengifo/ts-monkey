@@ -32,6 +32,7 @@ describe("eval", () => {
 			["3 * (3 * 3) + 10", 37],
 			["(5 + 10 * 2 + 15 / 3) * 2 + -10", 50],
 			["2 ** 2", 4],
+			["-523598121 + 1510219303", 986_621_182],
 		] as const;
 		for (const [input, expected] of tests) {
 			it.effect(input, () =>
