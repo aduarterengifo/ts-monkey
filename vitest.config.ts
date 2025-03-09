@@ -7,6 +7,9 @@ export default defineConfig({
 		setupFiles: [path.join(__dirname, "setupTests.ts")],
 		include: ["./src/tests/vitest/**/*.test.ts"],
 		globals: true,
+		coverage: {
+			provider: "v8",
+		},
 	},
 	resolve: {
 		alias: {
