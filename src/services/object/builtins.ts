@@ -1,7 +1,9 @@
+import { ArrayObj } from "@/schemas/objs/array";
 import { BuiltInObj } from "@/schemas/objs/built-in";
 import { ErrorObj } from "@/schemas/objs/error";
 import { FunctionObj } from "@/schemas/objs/function";
 import { IntegerObj } from "@/schemas/objs/int";
+import { StringObj } from "@/schemas/objs/string";
 import type { Obj } from "@/schemas/objs/union";
 import { Effect, Match, Schema } from "effect";
 import { DiffExp } from "src/schemas/nodes/exps/diff";
@@ -102,33 +104,21 @@ export const builtins = {
 
 export const builtInFnMap = {
 	len: (...args: Obj[]) =>
-		Effect.gen(function* () {
-			if (args.length !== 1) {
-				return yield* Effect.succeed(
-					ErrorObj.make({
-						message: `wrong number of arguments. got=${args.length}, want=1`,
-					}),
-				);
-			}
-
-			const firstArg = args[0];
-
-			return yield* Match.value(firstArg).pipe(
-				Match.tag("StringObj", (strObj) =>
-					Effect.succeed(IntegerObj.make({ value: strObj.value.length })),
-				),
-				Match.tag("ArrayObj", ({ elements }) =>
-					Effect.succeed(IntegerObj.make({ value: elements.length })),
-				),
-				Match.orElse(() =>
-					Effect.succeed(
-						ErrorObj.make({
-							message: `argument to "len" not supported, got ${firstArg._tag}`,
-						}),
+		Schema.decodeUnknown(Schema.Tuple(Schema.Union(StringObj, ArrayObj)))(
+			args,
+		).pipe(
+			Effect.flatMap(([firstArg]) =>
+				Match.value(firstArg).pipe(
+					Match.tag("StringObj", (strObj) =>
+						Effect.succeed(IntegerObj.make({ value: strObj.value.length })),
 					),
+					Match.tag("ArrayObj", ({ elements }) =>
+						Effect.succeed(IntegerObj.make({ value: elements.length })),
+					),
+					Match.exhaustive,
 				),
-			);
-		}),
+			),
+		),
 	diff,
 	sin,
 	cos,
