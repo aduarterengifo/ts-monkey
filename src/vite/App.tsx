@@ -8,10 +8,9 @@ import { examples } from "./examples";
 const PROMPT = ">>";
 
 function App() {
-	const [count, setCount] = useState(0);
 	const [text, setText] = useState(PROMPT);
 	const [instructions, setInstructions] = useState("");
-	const [evaluations, setEvaluations] = useState<string[]>([]);
+	const [_, setEvaluations] = useState<string[]>([]);
 
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 		if (e.ctrlKey && e.key === "c") {

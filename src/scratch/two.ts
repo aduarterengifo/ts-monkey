@@ -3,11 +3,7 @@ import { Console, Effect } from "effect";
 import { Schema } from "effect";
 import { nativeToExp } from "src/schemas/nodes/exps/union";
 import { ReturnStmt } from "src/schemas/nodes/stmts/return";
-import {
-	type Stmt,
-	isExpStmt,
-	Stmt,
-} from "src/schemas/nodes/stmts/union";
+import { Stmt, isExpStmt } from "src/schemas/nodes/stmts/union";
 
 const program = Effect.gen(function* () {
 	const istmt = nativeToExp(6);

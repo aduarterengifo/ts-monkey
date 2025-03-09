@@ -10,7 +10,7 @@ import {
 	expectStrObjEq,
 } from "@/services/expectations/obj/eq";
 import { secSquared } from "@/services/math";
-import { testIntegerObject, testNullOject } from "@/tests/evaluator/utils";
+import { testNullOject } from "@/tests/evaluator/utils";
 import { describe, expect, it } from "@effect/vitest";
 import { Cause, Effect, Exit, Match, Schema } from "effect";
 
@@ -164,7 +164,7 @@ describe("eval", () => {
 				["foobar", "identifier not found: foobar"],
 			] as const;
 
-			for (const [input, expected] of tests) {
+			for (const [input] of tests) {
 				it.effect(input, () =>
 					Effect.gen(function* () {
 						const result = yield* Effect.exit(evalP(input));
@@ -271,7 +271,7 @@ describe("eval", () => {
 				['len("one", "two")', "wrong number of arguments. got=2, want=1"],
 			] as const;
 
-			for (const [input, expected] of tests) {
+			for (const [input] of tests) {
 				it.effect(input, () =>
 					Effect.gen(function* () {
 						const result = yield* Effect.exit(evalP(input));
@@ -489,7 +489,7 @@ describe("eval", () => {
 				["[1, 2, 3][3]", null],
 				["[1, 2, 3][-1]", null],
 			] as const;
-			for (const [input, expected] of tests) {
+			for (const [input] of tests) {
 				it.effect(input, () =>
 					Effect.gen(function* () {
 						const result = yield* Effect.exit(evalP(input));
