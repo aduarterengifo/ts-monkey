@@ -61,14 +61,11 @@ export const testBooleanObject = (obj: Obj, expected: boolean) =>
 	);
 
 export const testNullOject = (obj: Obj) =>
-	Effect.gen(function* () {
-		if (obj !== NULL) {
-			return yield* new KennethParseError({
-				message: `obj is not NULL. got ${objInspect(obj)}`,
-			});
-		}
-		return true;
-	});
+	Effect.fail(
+		new KennethParseError({
+			message: `obj is not NULL. got ${objInspect(obj)}`,
+		}),
+	).pipe(Effect.when(() => obj !== NULL));
 
 export const testErrorObject = (obj: Obj, expected: string) =>
 	Effect.gen(function* () {
