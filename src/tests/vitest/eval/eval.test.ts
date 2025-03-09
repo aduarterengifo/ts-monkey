@@ -1,19 +1,18 @@
 import { KennethEvalError } from "@/errors/kenneth/eval";
 import { defaultLayer } from "@/layers/default";
+import { nodeString } from "@/schemas/nodes/union";
+import { ArrayObj } from "@/schemas/objs/array";
 import { FunctionObj } from "@/schemas/objs/function";
-import { Obj } from "@/schemas/objs/union";
-import { Evalua, Schemator } from "@/services/evaluator";
-import { expectStrExpEq } from "@/services/expectations/exp/eq";
+import { Evaluator } from "@/services/evaluator";
 import {
 	expectBooleanObjEq,
 	expectIntObjEq,
 	expectStrObjEq,
 } from "@/services/expectations/obj/eq";
 import { secSquared } from "@/services/math";
-import { testNullOject } from "@/tests/evaluator/utils";
+import { testIntegerObject, testNullOject } from "@/tests/evaluator/utils";
 import { describe, expect, it } from "@effect/vitest";
-import { Cause, Effect, Exit, Match } from "effect";
-import { ParseError } from "effect/ParseResult";
+import { Cause, Effect, Exit, Match, Schema } from "effect";
 
 const evalP = (input: string) =>
 	Effect.gen(function* () {
@@ -396,6 +395,14 @@ describe("eval", () => {
 			const tests = [
 				["diff(fn (x) { (3 * x ** 2 + 5 * x) ** 4 })(3)", 6816096],
 				["diff(fn (x) { 1 / (2 * x + 3) })(3)", -2 / 81],
+				[
+					"let f = fn(y) { y ** 4 }; let g = fn(r) { 3 * r ** 2 + 5 }; let h = fn(x) { f(g(x)) };  diff(h)(3)",
+					2359296,
+				],
+				[
+					"let f = fn(x) { x ** 4 }; let g = fn(x) { 3 * x ** 2 + 5 }; let h = fn(x) { f(g(x)) };  diff(h)(3)",
+					2359296,
+				],
 			] as const;
 
 			for (const [input, expected] of tests) {
@@ -414,6 +421,20 @@ describe("eval", () => {
 				["diff(fn(x) {cos(x)})(pi() / 2)", -Math.sin(Math.PI / 2)],
 				["diff(fn(x) {tan(x)})(0)", secSquared(0)],
 				["diff(fn(x) {tan(x)})(pi() / 4)", secSquared(Math.PI / 4)],
+			] as const;
+
+			for (const [input, expected] of tests) {
+				it.effect(input, () =>
+					evalP(input).pipe(
+						Effect.flatMap((evaluated) => expectIntObjEq(evaluated, expected)),
+					),
+				);
+			}
+		});
+		describe("log and exp", () => {
+			const tests = [
+				["diff(fn(x) {ln(x)})(1)", 1 / 1],
+				["diff(fn(x) {exp(x)})(1)", Math.E],
 			] as const;
 
 			for (const [input, expected] of tests) {
@@ -483,4 +504,48 @@ describe("eval", () => {
 			}
 		});
 	});
+
+	it.effect("FunctionObj", () =>
+		evalP("fn(x) { x+ 2}").pipe(
+			Effect.flatMap((evaluated) =>
+				Effect.gen(function* () {
+					const { params, body } =
+						yield* Schema.decodeUnknown(FunctionObj)(evaluated);
+					expect(params.length).toBe(1);
+					expect(nodeString(params[0])).toBe("x");
+					expect(nodeString(body)).toBe("(x + 2)");
+				}),
+			),
+		),
+	);
+	it.effect("Closures", () =>
+		evalP(`
+		let newAdder = fn(x) {
+		  fn(y) { x + y };
+		};
+
+		let addTwo = newAdder(2);
+		addTwo(2);
+		`).pipe(Effect.flatMap((evaluated) => expectIntObjEq(evaluated, 4))),
+	);
+	it.effect("StrExp", () =>
+		evalP('"Hello World!"').pipe(
+			Effect.flatMap((evaluated) => expectStrObjEq(evaluated, "Hello World!")),
+		),
+	);
+	it.effect("ArrayExp", () =>
+		evalP("[1, 2 * 2, 3 + 3]").pipe(
+			Effect.flatMap((evaluated) =>
+				Effect.gen(function* () {
+					const arrayObj = yield* Schema.decodeUnknown(ArrayObj)(evaluated);
+
+					expect(arrayObj.elements.length).toBe(3);
+
+					yield* expectIntObjEq(arrayObj.elements[0], 1);
+					yield* expectIntObjEq(arrayObj.elements[1], 4);
+					yield* expectIntObjEq(arrayObj.elements[2], 6);
+				}),
+			),
+		),
+	);
 });
