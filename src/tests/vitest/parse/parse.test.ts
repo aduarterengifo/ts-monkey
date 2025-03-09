@@ -2,11 +2,13 @@ import { defaultLayer } from "@/layers/default";
 import { BoolExp } from "@/schemas/nodes/exps/boolean";
 import { nativeToIdentExp } from "@/schemas/nodes/exps/ident";
 import { IfExp } from "@/schemas/nodes/exps/if";
+import { InfixExp } from "@/schemas/nodes/exps/infix";
 import { IntExp } from "@/schemas/nodes/exps/int";
 import { Program } from "@/schemas/nodes/program";
 import { ExpStmt } from "@/schemas/nodes/stmts/exp";
 import { LetStmt } from "@/schemas/nodes/stmts/let";
-import { nodeString } from "@/schemas/nodes/union";
+import { ReturnStmt } from "@/schemas/nodes/stmts/return";
+import { nodeString, tokenLiteral } from "@/schemas/nodes/union";
 import { TokenType } from "@/schemas/token-types/union";
 import {
 	expectBooleanExpEq,
@@ -14,10 +16,8 @@ import {
 	expectIntExpEq,
 } from "@/services/expectations/exp/eq";
 import { Parser } from "@/services/parser";
-import { testBoolExp } from "@/tests/parser/utils/test-bool-exp";
-import { testIdentExp } from "@/tests/parser/utils/test-identifier";
 import { testInfixExp } from "@/tests/parser/utils/test-infix-expression";
-import { testIntExp } from "@/tests/parser/utils/test-int-exp";
+import { testLiteralExpression } from "@/tests/parser/utils/test-literal-expression";
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import { getExpFromProgram } from "./helper";
@@ -57,7 +57,9 @@ describe("parse", () => {
 	);
 	it.effect("if expression", () =>
 		Effect.gen(function* () {
-			const exp = yield* getExpFromProgram(`if (x ${TokenType.LT} y) { x }`);
+			const exp = yield* getExpFromProgram(
+				`${TokenType.IF} ${TokenType.LPAREN}x ${TokenType.LT} y${TokenType.RPAREN} ${TokenType.LBRACE} x ${TokenType.RBRACE}`,
+			);
 			const {
 				condition,
 				alternative,
@@ -77,7 +79,9 @@ describe("parse", () => {
 	);
 	it.effect("if else expression", () =>
 		Effect.gen(function* () {
-			const exp = yield* getExpFromProgram("if (x < y) { x } else { y }");
+			const exp = yield* getExpFromProgram(
+				`${TokenType.IF} ${TokenType.LPAREN}x ${TokenType.LT} y${TokenType.RPAREN} ${TokenType.LBRACE} x ${TokenType.RBRACE} ${TokenType.ELSE} ${TokenType.LBRACE} y ${TokenType.RBRACE}`,
+			);
 			const {
 				condition,
 				alternative,
@@ -97,6 +101,46 @@ describe("parse", () => {
 			)(alternative?.statements);
 
 			yield* expectIdentExpEq(altExp, "y");
+		}).pipe(Effect.provide(defaultLayer)),
+	);
+	it.effect("nested if expression", () =>
+		Effect.gen(function* () {
+			const exp = yield* getExpFromProgram(`
+            if (11 > 1) {
+                if (10 > 1) {
+                    return 10;
+                }
+
+                return 1;
+            }`);
+
+			const {
+				condition,
+				alternative,
+				consequence: { statements },
+			} = yield* Schema.decodeUnknown(IfExp)(exp);
+
+			yield* testInfixExp(condition, "10", TokenType.GT, " 1");
+
+			const [{ expression }, consequence2] = yield* Schema.decodeUnknown(
+				Schema.Tuple(ExpStmt, ReturnStmt),
+			)(statements);
+
+			const consequence1IfExp = yield* Schema.decodeUnknown(IfExp)(expression);
+
+			const consequence1IfExpCondition = yield* Schema.decodeUnknown(InfixExp)(
+				consequence1IfExp.condition,
+			);
+
+			yield* testInfixExp(consequence1IfExpCondition, "10", ">", "1");
+
+			const [innerFirstConsequence] = yield* Schema.decodeUnknown(
+				Schema.Tuple(ReturnStmt),
+			)(consequence1IfExp.consequence.statements);
+
+			expect(tokenLiteral(innerFirstConsequence)).toBe("return");
+
+			yield* testLiteralExpression(innerFirstConsequence.value, 10);
 		}).pipe(Effect.provide(defaultLayer)),
 	);
 });
