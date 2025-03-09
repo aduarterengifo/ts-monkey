@@ -1,11 +1,15 @@
 import { KennethEvalError } from "@/errors/kenneth/eval";
 import { defaultLayer } from "@/layers/default";
+import { FunctionObj } from "@/schemas/objs/function";
 import { Obj } from "@/schemas/objs/union";
-import { Evaluator } from "@/services/evaluator";
+import { Evalua, Schemator } from "@/services/evaluator";
+import { expectStrExpEq } from "@/services/expectations/exp/eq";
 import {
 	expectBooleanObjEq,
 	expectIntObjEq,
+	expectStrObjEq,
 } from "@/services/expectations/obj/eq";
+import { secSquared } from "@/services/math";
 import { testNullOject } from "@/tests/evaluator/utils";
 import { describe, expect, it } from "@effect/vitest";
 import { Cause, Effect, Exit, Match } from "effect";
@@ -252,6 +256,7 @@ describe("eval", () => {
 			['len("four")', 4],
 			['len("hello world")', 11],
 			['let hello = fn(x) { "hello" }; len(hello(1))', 5],
+			["pi()", Math.PI],
 		] as const;
 
 		for (const [input, expected] of tests) {
@@ -271,9 +276,208 @@ describe("eval", () => {
 				it.effect(input, () =>
 					Effect.gen(function* () {
 						const result = yield* Effect.exit(evalP(input));
-						expect(result).toStrictEqual(
-							Exit.fail(new KennethEvalError({ message: expected })),
-						);
+
+						Exit.match(result, {
+							onFailure: (cause) =>
+								`Exited with failure state: ${Cause.pretty(cause)}`,
+							onSuccess: (value) => expect(true).toBe(false),
+						});
+					}),
+				);
+			}
+		});
+
+		describe("math", () => {
+			describe("trig", () => {
+				const tests = [
+					["sin(0)", Math.sin(0)],
+					["sin(pi() / 2)", Math.sin(Math.PI / 2)],
+					["cos(0)", Math.cos(0)],
+					["cos(pi() / 2)", Math.cos(Math.PI / 2)],
+					["tan(0)", Math.tan(0)],
+					["tan(pi() / 4)", Math.tan(Math.PI / 4)],
+				] as const;
+
+				for (const [input, expected] of tests) {
+					it.effect(input, () =>
+						evalP(input).pipe(
+							Effect.flatMap((evaluated) =>
+								expectIntObjEq(evaluated, expected),
+							),
+						),
+					);
+				}
+			});
+			describe("log and exp", () => {
+				const tests = [
+					["ln(0)", Math.log(0)],
+					["ln(1)", Math.log(1)],
+					["ln(e())", Math.log(Math.E)],
+					["exp(e())", Math.exp(Math.E)],
+					["exp(1)", Math.exp(1)],
+					["ln(exp(3))", Math.log(Math.exp(3))],
+				] as const;
+
+				for (const [input, expected] of tests) {
+					it.effect(input, () =>
+						evalP(input).pipe(
+							Effect.flatMap((evaluated) =>
+								expectIntObjEq(evaluated, expected),
+							),
+						),
+					);
+				}
+			});
+		});
+	});
+	describe("Differentiation", () => {
+		describe("general", () => {
+			const tests = [
+				["diff(fn(x) { x })(3)", 1],
+				["diff(fn(x) { 2 })(3)", 0],
+				["diff(fn(x) { 2 * x })(3)", 2],
+				["diff(fn(x) { (2 + 0) * x })(3)", 2],
+				["let second = 2; diff(fn(x) { x ** second })(3)", 6],
+				["diff(fn(x) { 3 * x ** 2 })(3)", 18],
+				["diff(fn(x) { 2 + 2 })(3)", 0],
+				["diff(fn(x) { 2 + x })(3)", 1],
+				["diff(fn(x) { 2 * x ** 3 + x + 3 })(3)", 55],
+				["diff(fn(x) { 2 * x ** 3 + (x + 3) })(3)", 55],
+				["diff(fn(x) { 2 * x ** 3 + x + 3 + 4 * x + 5 * x ** 4 })(3)", 599],
+				["let f = fn(y) { y }; diff(fn(x) { x ** 7 + f(2) })(3)", 5103],
+				["let f = fn(y) { y }; diff(fn(x) { x ** 7 + f(x) })(3)", 5104],
+				["let second = 2; diff(fn(x) { x ** 7 + second })(3)", 5103],
+				["diff(fn(x) { 2 * x ** 3 - (x + 3) })(3)", 53],
+			] as const;
+
+			for (const [input, expected] of tests) {
+				it.effect(input, () =>
+					evalP(input).pipe(
+						Effect.flatMap((evaluated) => expectIntObjEq(evaluated, expected)),
+					),
+				);
+			}
+		});
+		describe("product rule", () => {
+			const tests = [
+				["diff(fn(x) { (x + 2 * x ** 3) * (x + 1) })(3)", 277],
+				[
+					"diff(fn(x) { (x + 2 * x ** 3) * (x + 1) + (x + 3 * x ** 3) * (x + 1)  })(3)",
+					689,
+				],
+			] as const;
+
+			for (const [input, expected] of tests) {
+				it.effect(input, () =>
+					evalP(input).pipe(
+						Effect.flatMap((evaluated) => expectIntObjEq(evaluated, expected)),
+					),
+				);
+			}
+		});
+		describe("quotient rule", () => {
+			const tests = [
+				["diff(fn(x) { (x + 2 * x ** 3) / (x + 1) })(3)", 163 / 16],
+				[
+					"diff(fn(x) { (x + 2 * x ** 3) / (x + 1) + (x + 3 * x ** 3) / (x + 1)  })(3)",
+					163 / 16 + 61 / 4,
+				],
+			] as const;
+
+			for (const [input, expected] of tests) {
+				it.effect(input, () =>
+					evalP(input).pipe(
+						Effect.flatMap((evaluated) => expectIntObjEq(evaluated, expected)),
+					),
+				);
+			}
+		});
+		describe("chain rule", () => {
+			const tests = [
+				["diff(fn (x) { (3 * x ** 2 + 5 * x) ** 4 })(3)", 6816096],
+				["diff(fn (x) { 1 / (2 * x + 3) })(3)", -2 / 81],
+			] as const;
+
+			for (const [input, expected] of tests) {
+				it.effect(input, () =>
+					evalP(input).pipe(
+						Effect.flatMap((evaluated) => expectIntObjEq(evaluated, expected)),
+					),
+				);
+			}
+		});
+		describe("trig", () => {
+			const tests = [
+				["diff(fn(x) {sin(x)})(0)", Math.cos(0)],
+				["diff(fn(x) {sin(x)})(pi() / 2)", Math.cos(Math.PI / 2)],
+				["diff(fn(x) {cos(x)})(0)", -Math.sin(0)],
+				["diff(fn(x) {cos(x)})(pi() / 2)", -Math.sin(Math.PI / 2)],
+				["diff(fn(x) {tan(x)})(0)", secSquared(0)],
+				["diff(fn(x) {tan(x)})(pi() / 4)", secSquared(Math.PI / 4)],
+			] as const;
+
+			for (const [input, expected] of tests) {
+				it.effect(input, () =>
+					evalP(input).pipe(
+						Effect.flatMap((evaluated) => expectIntObjEq(evaluated, expected)),
+					),
+				);
+			}
+		});
+	});
+	describe("string concatenation", () => {
+		const tests = [['"Hello" + " " + "World!"', "Hello World!"]] as const;
+		for (const [input, expected] of tests) {
+			it.effect(input, () =>
+				evalP(input).pipe(
+					Effect.flatMap((evaluated) => expectStrObjEq(evaluated, expected)),
+				),
+			);
+		}
+	});
+	describe("IndexExp", () => {
+		describe("general", () => {
+			const tests = [
+				["[1, 2, 3][0]", 1],
+				["[1, 2, 3][1]", 2],
+				["[1, 2, 3][2]", 3],
+				["let i = 0; [1][i];", 1],
+				["[1, 2, 3][1 + 1];", 3],
+				["let myArray = [1, 2, 3]; myArray[2];", 3],
+				["let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6],
+				["let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2],
+			] as const;
+			for (const [input, expected] of tests) {
+				it.effect(input, () =>
+					evalP(input).pipe(
+						Effect.flatMap((evaluated) =>
+							Match.value(expected).pipe(
+								Match.when(Match.number, (expected) =>
+									expectIntObjEq(evaluated, expected),
+								),
+								Match.when(Match.null, () => testNullOject(evaluated)),
+								Match.exhaustive,
+							),
+						),
+					),
+				);
+			}
+		});
+		describe("out of range error handling", () => {
+			const tests = [
+				["[1, 2, 3][3]", null],
+				["[1, 2, 3][-1]", null],
+			] as const;
+			for (const [input, expected] of tests) {
+				it.effect(input, () =>
+					Effect.gen(function* () {
+						const result = yield* Effect.exit(evalP(input));
+
+						Exit.match(result, {
+							onFailure: (cause) =>
+								`Exited with failure state: ${Cause.pretty(cause)}`,
+							onSuccess: (value) => expect(true).toBe(false),
+						});
 					}),
 				);
 			}
