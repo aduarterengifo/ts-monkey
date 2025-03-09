@@ -1,9 +1,7 @@
 import { KennethEvalError } from "@/errors/kenneth/eval";
-import { defaultLayer } from "@/layers/default";
 import { nodeString } from "@/schemas/nodes/union";
 import { ArrayObj } from "@/schemas/objs/array";
 import { FunctionObj } from "@/schemas/objs/function";
-import { Evaluator } from "@/services/evaluator";
 import {
 	expectBooleanObjEq,
 	expectIntObjEq,
@@ -13,12 +11,7 @@ import { secSquared } from "@/services/math";
 import { testNullOject } from "@/tests/evaluator/utils";
 import { describe, expect, it } from "@effect/vitest";
 import { Cause, Effect, Exit, Match, Schema } from "effect";
-
-const evalP = (input: string) =>
-	Effect.gen(function* () {
-		const evaluator = yield* Evaluator;
-		return yield* evaluator.run(input);
-	}).pipe(Effect.provide(defaultLayer));
+import { evalP } from "../utils/eval";
 
 describe("eval", () => {
 	describe("IntExp", () => {
