@@ -13,7 +13,7 @@ export const OPERATOR_TO_FUNCTION_MAP = {
 } as const;
 
 export const PREFIX_OPERATOR_TO_FUNCTION_MAP = {
-	[TokenType.BANG]: (a: boolean) => !a,
+	[TokenType.BANG]: (a: number) => !a,
 	[TokenType.MINUS]: (a: number) => -a,
 } as const;
 

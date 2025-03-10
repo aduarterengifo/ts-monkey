@@ -2,7 +2,7 @@ import { BuiltInDiffFunc } from "@/schemas/built-in/diff";
 import { CallExp } from "@/schemas/nodes/exps/call";
 import { OpInfixExp } from "@/schemas/nodes/exps/infix";
 import { nativeToIntExp } from "@/schemas/nodes/exps/int";
-import { PrefixExp, opPrefixExp } from "@/schemas/nodes/exps/prefix";
+import { opPrefixExp } from "@/schemas/nodes/exps/prefix";
 import { BuiltInObj } from "@/schemas/objs/built-in";
 import { BuiltInCallObj, CallObj } from "@/schemas/objs/call";
 import { IdentObj } from "@/schemas/objs/ident";
