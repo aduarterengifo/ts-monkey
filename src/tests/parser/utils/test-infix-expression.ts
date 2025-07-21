@@ -1,4 +1,3 @@
-import { ConstantExp } from "@/schemas/nodes/exps/unions/constant";
 import { Effect, Schema } from "effect";
 import { KennethParseError } from "src/errors/kenneth/parse";
 import { InfixExp } from "src/schemas/nodes/exps/infix";

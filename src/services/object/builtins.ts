@@ -1,10 +1,10 @@
 import { ArrayObj } from "@/schemas/objs/array";
 import { BuiltInObj } from "@/schemas/objs/built-in";
-import { ErrorObj } from "@/schemas/objs/error";
 import { FunctionObj } from "@/schemas/objs/function";
 import { IntegerObj } from "@/schemas/objs/int";
+import { NULL, type NullObj } from "@/schemas/objs/null";
 import { StringObj } from "@/schemas/objs/string";
-import type { Obj } from "@/schemas/objs/union";
+import { Obj } from "@/schemas/objs/union";
 import { Effect, Match, Schema } from "effect";
 import { DiffExp } from "src/schemas/nodes/exps/diff";
 import { IdentExp } from "src/schemas/nodes/exps/ident";
@@ -100,6 +100,7 @@ export const builtins = {
 	ln: BuiltInObj.make({ fn: "ln" }),
 	pi: BuiltInObj.make({ fn: "pi" }),
 	exp: BuiltInObj.make({ fn: "exp" }),
+	first: BuiltInObj.make({ fn: "first" }),
 } as const;
 
 export const builtInFnMap = {
@@ -117,6 +118,38 @@ export const builtInFnMap = {
 					),
 					Match.exhaustive,
 				),
+			),
+		),
+	first: (...args: Obj[]) =>
+		Schema.decodeUnknown(Schema.Tuple(ArrayObj))(args).pipe(
+			Effect.flatMap(([{ elements }]) =>
+				elements.length > 0
+					? Effect.succeed(elements[0])
+					: Effect.succeed(NULL),
+			),
+		),
+	last: (...args: Obj[]) =>
+		Schema.decodeUnknown(Schema.Tuple(ArrayObj))(args).pipe(
+			Effect.flatMap(([{ elements }]) =>
+				elements.length > 0
+					? Effect.succeed(elements[elements.length - 1])
+					: Effect.succeed(NULL),
+			),
+		),
+	rest: (...args: Obj[]) =>
+		Schema.decodeUnknown(Schema.Tuple(ArrayObj))(args).pipe(
+			Effect.flatMap(([{ elements }]) =>
+				Effect.gen(function* () {
+					return yield* elements.length > 0
+						? Effect.succeed(ArrayObj.make({ elements: elements.slice(1) }))
+						: Effect.succeed(NULL);
+				}),
+			),
+		),
+	push: (...args: Obj[]) =>
+		Schema.decodeUnknown(Schema.Tuple(ArrayObj, Obj))(args).pipe(
+			Effect.flatMap(([{ elements }, element]) =>
+				Effect.succeed(ArrayObj.make({ elements: [...elements, element] })),
 			),
 		),
 	diff,

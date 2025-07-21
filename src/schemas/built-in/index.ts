@@ -10,6 +10,7 @@ export const BuiltInFunc = Schema.Literal(
 	"exp",
 	"pi",
 	"e",
+	"first",
 );
 
 export type BuiltInFunc = typeof BuiltInFunc.Type;

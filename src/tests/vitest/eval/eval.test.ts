@@ -1,24 +1,17 @@
 import { KennethEvalError } from "@/errors/kenneth/eval";
-import { defaultLayer } from "@/layers/default";
 import { nodeString } from "@/schemas/nodes/union";
 import { ArrayObj } from "@/schemas/objs/array";
 import { FunctionObj } from "@/schemas/objs/function";
-import { Evaluator } from "@/services/evaluator";
 import {
 	expectBooleanObjEq,
 	expectIntObjEq,
 	expectStrObjEq,
 } from "@/services/expectations/obj/eq";
 import { secSquared } from "@/services/math";
-import { testIntegerObject, testNullOject } from "@/tests/evaluator/utils";
+import { testNullOject } from "@/tests/evaluator/utils";
 import { describe, expect, it } from "@effect/vitest";
 import { Cause, Effect, Exit, Match, Schema } from "effect";
-
-const evalP = (input: string) =>
-	Effect.gen(function* () {
-		const evaluator = yield* Evaluator;
-		return yield* evaluator.run(input);
-	}).pipe(Effect.provide(defaultLayer));
+import { evalP } from "../utils/eval";
 
 describe("eval", () => {
 	describe("IntExp", () => {
@@ -39,6 +32,7 @@ describe("eval", () => {
 			["3 * (3 * 3) + 10", 37],
 			["(5 + 10 * 2 + 15 / 3) * 2 + -10", 50],
 			["2 ** 2", 4],
+			["-523598121 + 1510219303", 986_621_182],
 		] as const;
 		for (const [input, expected] of tests) {
 			it.effect(input, () =>
@@ -164,7 +158,7 @@ describe("eval", () => {
 				["foobar", "identifier not found: foobar"],
 			] as const;
 
-			for (const [input, expected] of tests) {
+			for (const [input] of tests) {
 				it.effect(input, () =>
 					Effect.gen(function* () {
 						const result = yield* Effect.exit(evalP(input));
@@ -271,7 +265,7 @@ describe("eval", () => {
 				['len("one", "two")', "wrong number of arguments. got=2, want=1"],
 			] as const;
 
-			for (const [input, expected] of tests) {
+			for (const [input] of tests) {
 				it.effect(input, () =>
 					Effect.gen(function* () {
 						const result = yield* Effect.exit(evalP(input));
@@ -489,7 +483,7 @@ describe("eval", () => {
 				["[1, 2, 3][3]", null],
 				["[1, 2, 3][-1]", null],
 			] as const;
-			for (const [input, expected] of tests) {
+			for (const [input] of tests) {
 				it.effect(input, () =>
 					Effect.gen(function* () {
 						const result = yield* Effect.exit(evalP(input));

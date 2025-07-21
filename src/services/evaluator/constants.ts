@@ -1,4 +1,4 @@
-import { TokenType } from '../../schemas/token-types/union'
+import { TokenType } from "../../schemas/token-types/union";
 
 export const OPERATOR_TO_FUNCTION_MAP = {
 	[TokenType.PLUS]: (a: number, b: number) => a + b,
@@ -10,8 +10,13 @@ export const OPERATOR_TO_FUNCTION_MAP = {
 	[TokenType.GT]: (a: number, b: number) => a > b,
 	[TokenType.EQ]: <T>(a: T, b: T) => a === b,
 	[TokenType.NOT_EQ]: <T>(a: T, b: T) => a !== b,
-} as const
+} as const;
+
+export const PREFIX_OPERATOR_TO_FUNCTION_MAP = {
+	[TokenType.BANG]: (a: number) => !a,
+	[TokenType.MINUS]: (a: number) => -a,
+} as const;
 
 export const STRING_OPERATOR_TO_FUNCTION_MAP = {
 	[TokenType.PLUS]: (a: string, b: string) => a + b,
-} as const
+} as const;
