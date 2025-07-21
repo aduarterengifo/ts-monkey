@@ -229,49 +229,59 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 					),
 				),
 				Match.tag("CallObj", ({ fn, args }) =>
-					Effect.succeed(
-						CallExp.make({
-							token: { _tag: "fn", literal: "fn" },
-							fn: FuncExp.make({
-								token: { _tag: "fn", literal: "fn" },
-								parameters: diffExp.params, // LIMITATION TO A SINGLE VARIABLE FUNCTIONS.
-								body: BlockStmt.make({
-									token: { _tag: "!", literal: "!" }, // FIX eventually
-									statements: [
-										ExpStmt.make({
-											token: {
-												_tag: "!",
-												literal: "!",
-											},
-											expression: CallExp.make({
-												token: {
-													_tag: "!",
-													literal: "!",
-												},
-												fn: Match.value(fn).pipe(
-													Match.tag("BuiltInObj", ({ fn }) =>
-														IdentExp.make({
-															token: { _tag: "IDENT", literal: fn },
-															value: fn,
-														}),
-													),
-													Match.tag("FunctionObj", ({ params, body }) =>
-														FuncExp.make({
-															token: fnTokenSchema.make({ literal: "fn" }),
-															parameters: params,
-															body,
-														}),
-													),
-													Match.exhaustive,
-												),
-												args,
-											}),
+					Effect.all(
+						args.map((arg) =>
+							Schema.decodeUnknown(PolynomialObj)(arg).pipe(
+								Effect.flatMap(convertToExp),
+							),
+						),
+					).pipe(
+						Effect.flatMap((args) =>
+							Effect.succeed(
+								CallExp.make({
+									token: { _tag: "fn", literal: "fn" },
+									fn: FuncExp.make({
+										token: { _tag: "fn", literal: "fn" },
+										parameters: diffExp.params, // LIMITATION TO A SINGLE VARIABLE FUNCTIONS.
+										body: BlockStmt.make({
+											token: { _tag: "!", literal: "!" }, // FIX eventually
+											statements: [
+												ExpStmt.make({
+													token: {
+														_tag: "!",
+														literal: "!",
+													},
+													expression: CallExp.make({
+														token: {
+															_tag: "!",
+															literal: "!",
+														},
+														fn: Match.value(fn).pipe(
+															Match.tag("BuiltInObj", ({ fn }) =>
+																IdentExp.make({
+																	token: { _tag: "IDENT", literal: fn },
+																	value: fn,
+																}),
+															),
+															Match.tag("FunctionObj", ({ params, body }) =>
+																FuncExp.make({
+																	token: fnTokenSchema.make({ literal: "fn" }),
+																	parameters: params,
+																	body,
+																}),
+															),
+															Match.exhaustive,
+														),
+														args,
+													}),
+												}),
+											],
 										}),
-									],
+									}),
+									args,
 								}),
-							}),
-							args,
-						}),
+							),
+						),
 					),
 				),
 				Match.exhaustive,

@@ -2,20 +2,21 @@
 
 import { Schema } from "effect";
 import type { BuiltInFunc } from "../built-in";
-import { Exp } from "../nodes/exps/union";
+import type { Exp } from "../nodes/exps/union";
 import { BuiltInObj } from "./built-in";
 import { FunctionObj, type FunctionObjEncoded } from "./function";
+import { Obj, type ObjEncoded } from "./union";
 
 export interface CallObj {
 	readonly _tag: "CallObj";
 	readonly fn: FunctionObj | BuiltInObj;
-	readonly args: readonly Exp[];
+	readonly args: readonly Obj[];
 }
 
 export interface CallObjEncoded {
 	readonly _tag: "CallObj";
 	readonly fn: FunctionObjEncoded | BuiltInObj;
-	readonly args: readonly Exp[];
+	readonly args: readonly ObjEncoded[];
 }
 
 export const CallObj = Schema.TaggedStruct("CallObj", {
@@ -25,10 +26,10 @@ export const CallObj = Schema.TaggedStruct("CallObj", {
 			FunctionObjEncoded | BuiltInObj
 		> => Schema.Union(FunctionObj, BuiltInObj),
 	),
-	args: Schema.Array(Schema.suspend((): Schema.Schema<Exp> => Exp)),
+	args: Schema.Array(Schema.suspend((): Schema.Schema<Obj, ObjEncoded> => Obj)),
 });
 
-export const BuiltInCallObj = (fn: BuiltInFunc) => (args: readonly Exp[]) =>
+export const BuiltInCallObj = (fn: BuiltInFunc) => (args: readonly Obj[]) =>
 	CallObj.make({
 		fn: BuiltInObj.make({ fn }),
 		args,

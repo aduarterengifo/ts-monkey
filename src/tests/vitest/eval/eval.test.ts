@@ -414,6 +414,17 @@ describe("eval", () => {
 				);
 			}
 		});
+		describe("trig constant", () => {
+			const tests = [["diff(fn(x) {sin(2)})(0)", 0]] as const;
+
+			for (const [input, expected] of tests) {
+				it.effect(input, () =>
+					evalP(input).pipe(
+						Effect.flatMap((evaluated) => expectIntObjEq(evaluated, expected)),
+					),
+				);
+			}
+		});
 		describe("trig", () => {
 			const tests = [
 				["diff(fn(x) {sin(x)})(0)", Math.cos(0)],
@@ -436,6 +447,7 @@ describe("eval", () => {
 		describe("trig chain", () => {
 			const tests = [
 				["diff(fn(x) { sin(3 * x + 2) })(0)", 3 * Math.cos(3 * 0 + 2)],
+				["diff(fn(x) { 3 * x + 2 })(0)", 3],
 			] as const;
 
 			for (const [input, expected] of tests) {
