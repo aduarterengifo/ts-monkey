@@ -18,7 +18,6 @@ import type { Obj } from "@/schemas/objs/union";
 import { PolynomialObj } from "@/schemas/objs/unions/polynomials";
 import { fnTokenSchema } from "@/schemas/token/function-literal";
 import { Effect, Either, Match, Schema } from "effect";
-import { left } from "effect/Either";
 import type { ParseError } from "effect/ParseResult";
 import type { KennethParseError } from "src/errors/kenneth/parse";
 import type { DiffExp } from "src/schemas/nodes/exps/diff";
@@ -138,7 +137,9 @@ const nodeEvalMatch = (env: Environment) =>
 									Schema.decodeUnknownEither(BuiltInDiffObj)(fnEval);
 
 								return yield* Either.isRight(either) && identoverlap
-									? Effect.succeed(CallObj.make({ fn: either.right, args }))
+									? Effect.succeed(
+											CallObj.make({ fn: either.right, args: argsEval }),
+										)
 									: applyFunction(obj)(argsEval);
 							}),
 						),

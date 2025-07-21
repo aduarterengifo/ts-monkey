@@ -36,11 +36,17 @@ const baseBuiltInDiffFunc =
 					Effect.flatMap((diffFn) =>
 						Match.value(diffFn).pipe(
 							Match.when("sin", () =>
-								Effect.succeed(
-									CallObj.make({
-										fn: BuiltInObj.make({ fn: "cos" }),
-										args,
-									}),
+								Schema.decodeUnknown(PolynomialObj)(args[0]).pipe(
+									Effect.flatMap((g) =>
+										chainRule(
+											CallObj.make({
+												fn: BuiltInObj.make({ fn: "cos" }),
+												args,
+											}),
+											g,
+											x,
+										),
+									),
 								),
 							),
 							Match.when("cos", () =>
