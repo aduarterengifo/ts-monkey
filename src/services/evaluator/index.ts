@@ -18,6 +18,7 @@ import type { Obj } from "@/schemas/objs/union";
 import { PolynomialObj } from "@/schemas/objs/unions/polynomials";
 import { fnTokenSchema } from "@/schemas/token/function-literal";
 import { Effect, Either, Match, Schema } from "effect";
+import { left } from "effect/Either";
 import type { ParseError } from "effect/ParseResult";
 import type { KennethParseError } from "src/errors/kenneth/parse";
 import type { DiffExp } from "src/schemas/nodes/exps/diff";
@@ -57,6 +58,29 @@ import {
 	OPERATOR_TO_FUNCTION_MAP,
 	STRING_OPERATOR_TO_FUNCTION_MAP,
 } from "./constants";
+
+const isContaminatedExpression = (
+	exp: Exp,
+	contaminatedIdents: readonly IdentExp[],
+): boolean =>
+	Match.value(exp).pipe(
+		Match.tag("IdentExp", (ident) =>
+			contaminatedIdents.some((id) => IdentExpEq(id, ident)),
+		),
+		Match.tag(
+			"InfixExp",
+			({ left, right }) =>
+				isContaminatedExpression(left, contaminatedIdents) ||
+				isContaminatedExpression(right, contaminatedIdents),
+		),
+		Match.tag("PrefixExp", ({ right }) =>
+			isContaminatedExpression(right, contaminatedIdents),
+		),
+		Match.tag("CallExp", ({ args }) =>
+			args.some((arg) => isContaminatedExpression(arg, contaminatedIdents)),
+		),
+		Match.orElse(() => false),
+	);
 
 // this error is what we pay for!!!
 const nodeEvalMatch = (env: Environment) =>
@@ -106,10 +130,8 @@ const nodeEvalMatch = (env: Environment) =>
 					).pipe(
 						Effect.flatMap((obj) =>
 							Effect.gen(function* () {
-								const identoverlap = env.idents.some((ident) =>
-									args.some(
-										(arg) => isIdentExp(arg) && ident.value === arg.value,
-									),
+								const identoverlap = args.some((arg) =>
+									isContaminatedExpression(arg, env.idents),
 								);
 
 								const either =
@@ -184,6 +206,7 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 		yield* Effect.log("diff:");
 		const diffSoftEval = yield* diffPolynomial(softEval, diffExp.params[0]);
 
+		yield* Effect.log("diff-eval", diffSoftEval);
 		// maybe simplest will be to convert back to exp and Eval.
 		const convertToExp = (obj: PolynomialObj): Effect.Effect<Exp, ParseError> =>
 			Match.value(obj).pipe(
