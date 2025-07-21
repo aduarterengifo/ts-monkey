@@ -295,6 +295,7 @@ describe("eval", () => {
 					["cos(pi() / 2)", Math.cos(Math.PI / 2)],
 					["tan(0)", Math.tan(0)],
 					["tan(pi() / 4)", Math.tan(Math.PI / 4)],
+					["fn (x) { cos(pi() / x) }(2)", Math.cos(Math.PI / 2)],
 				] as const;
 
 				for (const [input, expected] of tests) {
@@ -416,6 +417,7 @@ describe("eval", () => {
 		describe("trig", () => {
 			const tests = [
 				["diff(fn(x) {sin(x)})(0)", Math.cos(0)],
+				["diff(fn(x) {sin(2)})(0)", 0],
 				["diff(fn(x) {sin(x)})(pi() / 2)", Math.cos(Math.PI / 2)],
 				["diff(fn(x) {cos(x)})(0)", -Math.sin(0)],
 				["diff(fn(x) {cos(x)})(pi() / 2)", -Math.sin(Math.PI / 2)],
@@ -433,7 +435,7 @@ describe("eval", () => {
 		});
 		describe("trig chain", () => {
 			const tests = [
-				["diff(fn(x) { sin(3x+2) })(0)", 3 * Math.cos(3 * 0 + 2)],
+				["diff(fn(x) { sin(3 * x + 2) })(0)", 3 * Math.cos(3 * 0 + 2)],
 			] as const;
 
 			for (const [input, expected] of tests) {
