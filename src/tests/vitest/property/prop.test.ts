@@ -1,16 +1,12 @@
 import { defaultLayer } from "@/layers/default";
 import { infixOperatorSchema } from "@/schemas/infix-operator";
-import { ArrayObj } from "@/schemas/objs/array";
 import { BooleanObj } from "@/schemas/objs/bool";
 import { IntegerObj } from "@/schemas/objs/int";
-import { Obj } from "@/schemas/objs/union";
 import { prefixOperatorSchema } from "@/schemas/prefix-operator";
-import { TokenType } from "@/schemas/token-types/union";
 import {
 	OPERATOR_TO_FUNCTION_MAP,
 	PREFIX_OPERATOR_TO_FUNCTION_MAP,
 } from "@/services/evaluator/constants";
-import { objInspect } from "@/services/object";
 import { describe, expect, it, layer } from "@effect/vitest";
 import { Effect, Match, Schema } from "effect";
 import { evalP } from "../utils/eval";
