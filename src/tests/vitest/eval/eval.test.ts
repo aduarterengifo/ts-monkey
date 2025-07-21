@@ -433,7 +433,7 @@ describe("eval", () => {
 		});
 		describe("trig chain", () => {
 			const tests = [
-				["diff(fn(x) {sin(3x+2)})(0)", 3 * Math.cos(3 * 0 + 2)],
+				["diff(fn(x) { sin(3x+2) })(0)", 3 * Math.cos(3 * 0 + 2)],
 			] as const;
 
 			for (const [input, expected] of tests) {
