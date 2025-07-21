@@ -38,13 +38,39 @@ const baseBuiltInDiffFunc =
 							Match.when("sin", () =>
 								Schema.decodeUnknown(PolynomialObj)(args[0]).pipe(
 									Effect.flatMap((g) =>
-										chainRule(
-											CallObj.make({
-												fn: BuiltInObj.make({ fn: "cos" }),
-												args,
-											}),
-											g,
-											x,
+										Match.value(g).pipe(
+											Match.tag("IdentObj", () =>
+												Effect.succeed(
+													CallObj.make({
+														fn: BuiltInObj.make({ fn: "cos" }),
+														args,
+													}),
+												),
+											),
+											Match.tag("IntegerObj", () =>
+												Effect.succeed(
+													CallObj.make({
+														fn: BuiltInObj.make({ fn: "cos" }),
+														args,
+													}),
+												),
+											),
+											Match.orElse(() =>
+												Effect.gen(function* () {
+													yield* Effect.log(
+														`Differentiating sin with arg type: ${g._tag}`,
+													);
+													const chain = yield* chainRule(
+														CallObj.make({
+															fn: BuiltInObj.make({ fn: "sin" }),
+															args: [IdentObj.make({ identExp: x })],
+														}),
+														g,
+														x,
+													);
+													return chain;
+												}),
+											),
 										),
 									),
 								),
@@ -106,6 +132,7 @@ const baseBuiltInDiffFunc =
 					),
 				),
 			),
+			Effect.withSpan("diff.built_in"),
 		);
 
 const processTerm = (exp: PolynomialObj, x: IdentExp) =>
@@ -169,6 +196,7 @@ const processTerm = (exp: PolynomialObj, x: IdentExp) =>
 		),
 		Match.tag("CallObj", baseBuiltInDiffFunc(x)),
 		Match.exhaustive,
+		Effect.withSpan("diff.process_term"),
 	);
 
 export const diffPolynomial = (
@@ -225,4 +253,5 @@ export const diffPolynomial = (
 			),
 		),
 		Match.exhaustive,
+		Effect.withSpan("diff.outer"),
 	);

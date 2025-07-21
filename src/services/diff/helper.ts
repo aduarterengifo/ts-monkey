@@ -4,13 +4,14 @@ import { BlockStmt } from "@/schemas/nodes/stmts/block";
 import { ExpStmt } from "@/schemas/nodes/stmts/exp";
 import { CallObj } from "@/schemas/objs/call";
 import { FunctionObj } from "@/schemas/objs/function";
+import type { Obj } from "@/schemas/objs/union";
 import type { PolynomialObj } from "@/schemas/objs/unions/polynomials";
 import { Effect } from "effect";
 import { createEnvironment } from "../object/environment";
 
 export const makeLambda = (
 	x: IdentExp,
-	args: readonly Exp[],
+	args: readonly Obj[],
 	expression: Exp,
 ): Effect.Effect<PolynomialObj, never, never> =>
 	Effect.succeed(
