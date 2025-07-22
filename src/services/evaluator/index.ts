@@ -287,6 +287,8 @@ export const evalDiff = (diffExp: DiffExp) =>
 
 		const expResult = yield* convertToExp(diffSoftEval);
 
+		yield* Effect.log("after convert", nodeString(expResult));
+
 		// yield* logDebug('exp', expResult)
 		// yield* logDebug('--------------------------')
 

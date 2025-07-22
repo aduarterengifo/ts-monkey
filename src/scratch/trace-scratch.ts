@@ -24,7 +24,7 @@ const program = (input: string) =>
 ManagedRuntime.make(
 	Layer.mergeAll(Parser.Default, Evaluator.Default),
 ).runPromise(
-	program("diff(fn (x) { 1 / (2 * x + 3) })(3)").pipe(
+	program("diff(fn(x) { sin(3 * x + 2) })(0)").pipe(
 		Effect.provide(NodeSdkLive),
 		Effect.catchAllCause(Effect.logInfo),
 	),

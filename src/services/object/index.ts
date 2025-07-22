@@ -21,9 +21,17 @@ export const objMatch = $match;
 // compiler won't scream at you to remind you to handle that specific case.
 export const objInspect = (obj: Obj): string =>
 	Match.value(obj).pipe(
-		Match.tag("InfixObj", () => "infix obj"),
+		Match.tag(
+			"InfixObj",
+			({ left, operator, right }) =>
+				`(${objInspect(left)} ${operator} ${objInspect(right)})`,
+		),
+		Match.tag(
+			"CallObj",
+			({ args, fn }) => `${objInspect(fn)}(${args.map(objInspect).join(", ")})`,
+		),
 		Match.tag("IdentObj", ({ identExp: { value } }) => value),
-		Match.tag("BuiltInObj", () => "builtin function"),
+		Match.tag("BuiltInObj", ({ fn }) => fn),
 		Match.tag(
 			"FunctionObj",
 			({ params, body }) => `
