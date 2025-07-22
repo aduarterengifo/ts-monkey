@@ -25,6 +25,7 @@ import {
 	expectIdentEquivalence,
 } from "../../schemas/nodes/exps/ident";
 import { TokenType } from "../../schemas/token-types/union";
+import { objInspect } from "../object";
 import { makeLambda } from "./helper";
 
 const baseBuiltInDiffFunc = (x: IdentExp) =>
@@ -70,12 +71,15 @@ const baseBuiltInDiffFunc = (x: IdentExp) =>
 															x,
 														);
 
-														yield* Effect.log("chain", chain);
+														yield* Effect.log("chain", objInspect(chain));
 
 														return chain;
 													}).pipe(
 														Effect.tap((x) =>
-															Effect.annotateCurrentSpan("chain", x),
+															Effect.annotateCurrentSpan(
+																"chain",
+																objInspect(x),
+															),
 														),
 													),
 												),
@@ -226,58 +230,61 @@ const processTerm = Effect.fn("diff.process-term")(
 
 // powerRule(ONE, ONE, x)
 
-export const diffPolynomial = (
-	obj: PolynomialObj,
-	x: IdentExp,
-): Effect.Effect<PolynomialObj, ParseError | KennethParseError, never> =>
-	Match.value(obj).pipe(
-		Match.tag("IntegerObj", () => constantRule()), // leaf
-		Match.tag("CallObj", baseBuiltInDiffFunc(x)),
-		Match.tag("IdentObj", () => powerRule(ONE, ONE, x)), // leaf
-		Match.tag("InfixObj", ({ left, operator, right }) =>
-			Effect.all([
-				Schema.decodeUnknown(PolynomialObj)(left),
-				Schema.decodeUnknown(
-					Schema.Literal(
-						TokenType.MINUS,
-						TokenType.PLUS,
-						TokenType.ASTERISK,
-						TokenType.SLASH,
-						TokenType.EXPONENT,
-					),
-				)(operator),
-				Schema.decodeUnknown(PolynomialObj)(right),
-			]).pipe(
-				Effect.flatMap(([left, operator, right]) =>
-					Match.value(operator).pipe(
-						Match.when(TokenType.ASTERISK, () => productRule(left, right, x)),
-						Match.when(TokenType.SLASH, () => quotientRule(left, right, x)),
-						Match.when(TokenType.EXPONENT, (operator) =>
-							Match.value(left).pipe(
-								Match.tag("InfixObj", () =>
-									chainRule(
-										InfixObj.make({
-											left: IdentObj.make({ identExp: x }),
-											operator,
-											right,
-										}),
-										left,
-										x,
+export const diffPolynomial = Effect.fn("diff.outer")(
+	(
+		obj: PolynomialObj,
+		x: IdentExp,
+	): Effect.Effect<PolynomialObj, ParseError | KennethParseError, never> =>
+		Match.value(obj).pipe(
+			Match.tag("IntegerObj", () => constantRule()), // leaf
+			Match.tag("CallObj", baseBuiltInDiffFunc(x)),
+			Match.tag("IdentObj", () => powerRule(ONE, ONE, x)), // leaf
+			Match.tag("InfixObj", ({ left, operator, right }) =>
+				Effect.all([
+					Schema.decodeUnknown(PolynomialObj)(left),
+					Schema.decodeUnknown(
+						Schema.Literal(
+							TokenType.MINUS,
+							TokenType.PLUS,
+							TokenType.ASTERISK,
+							TokenType.SLASH,
+							TokenType.EXPONENT,
+						),
+					)(operator),
+					Schema.decodeUnknown(PolynomialObj)(right),
+				]).pipe(
+					Effect.flatMap(([left, operator, right]) =>
+						Match.value(operator).pipe(
+							Match.when(TokenType.ASTERISK, () => productRule(left, right, x)),
+							Match.when(TokenType.SLASH, () => quotientRule(left, right, x)),
+							Match.when(TokenType.EXPONENT, (operator) =>
+								Match.value(left).pipe(
+									Match.tag("InfixObj", () =>
+										chainRule(
+											InfixObj.make({
+												left: IdentObj.make({ identExp: x }),
+												operator,
+												right,
+											}),
+											left,
+											x,
+										),
 									),
+									Match.orElse(() => processTerm(obj, x)),
 								),
-								Match.orElse(() => processTerm(obj, x)),
 							),
+							Match.when(TokenType.PLUS, (plus) =>
+								sumAndDifferenceRule(left, right, x, plus),
+							),
+							Match.when(TokenType.MINUS, (minus) =>
+								sumAndDifferenceRule(left, right, x, minus),
+							),
+							Match.exhaustive,
 						),
-						Match.when(TokenType.PLUS, (plus) =>
-							sumAndDifferenceRule(left, right, x, plus),
-						),
-						Match.when(TokenType.MINUS, (minus) =>
-							sumAndDifferenceRule(left, right, x, minus),
-						),
-						Match.exhaustive,
 					),
 				),
 			),
+			Match.exhaustive,
+			Effect.tap((x) => Effect.log("outer obj", objInspect(obj))),
 		),
-		Match.exhaustive,
-	);
+);
