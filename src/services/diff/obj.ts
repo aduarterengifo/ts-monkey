@@ -35,41 +35,49 @@ const baseBuiltInDiffFunc =
 				Schema.decodeUnknown(BuiltInDiffFunc)(fn.fn).pipe(
 					Effect.flatMap((diffFn) =>
 						Match.value(diffFn).pipe(
-							Match.when("sin", () =>
-								Schema.decodeUnknown(PolynomialObj)(args[0]).pipe(
-									Effect.flatMap((g) =>
-										Match.value(g).pipe(
-											Match.tag("IdentObj", () =>
-												Effect.succeed(
-													CallObj.make({
-														fn: BuiltInObj.make({ fn: "cos" }),
-														args,
-													}),
-												),
-											),
-											Match.tag("IntegerObj", () =>
-												Effect.succeed(
-													CallObj.make({
-														fn: BuiltInObj.make({ fn: "cos" }),
-														args,
-													}),
-												),
-											),
-											Match.orElse(() =>
-												Effect.gen(function* () {
-													yield* Effect.log(
-														`Differentiating sin with arg type: ${g._tag}`,
-													);
-													const chain = yield* chainRule(
+							Match.when(
+								"sin",
+								Effect.fn("diff.sin")(() =>
+									Schema.decodeUnknown(PolynomialObj)(args[0]).pipe(
+										Effect.flatMap((g) =>
+											Match.value(g).pipe(
+												Match.tag("IdentObj", () =>
+													Effect.succeed(
 														CallObj.make({
-															fn: BuiltInObj.make({ fn: "sin" }),
-															args: [IdentObj.make({ identExp: x })],
+															fn: BuiltInObj.make({ fn: "cos" }),
+															args,
 														}),
-														g,
-														x,
-													);
-													return chain;
-												}),
+													),
+												),
+												Match.tag("IntegerObj", () =>
+													Effect.succeed(
+														CallObj.make({
+															fn: BuiltInObj.make({ fn: "cos" }),
+															args,
+														}),
+													),
+												),
+												Match.orElse(() =>
+													Effect.gen(function* () {
+														yield* Effect.log(
+															`Differentiating sin with arg type: ${g._tag}`,
+														);
+														const chain = yield* chainRule(
+															CallObj.make({
+																fn: BuiltInObj.make({ fn: "sin" }),
+																args: [IdentObj.make({ identExp: x })],
+															}),
+															g,
+															x,
+														);
+
+														return chain;
+													}).pipe(
+														Effect.tap((x) =>
+															Effect.annotateCurrentSpan("chain", x),
+														),
+													),
+												),
 											),
 										),
 									),
