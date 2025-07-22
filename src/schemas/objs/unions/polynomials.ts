@@ -90,14 +90,20 @@ export const sumAndDifferenceRule = Effect.fn("diff.sumAndDifferenceRule")(
 		),
 );
 
-export const powerRule = (coeff: IntegerObj, power: IntegerObj, x: IdentExp) =>
-	newTerm(
-		coeff.value * power.value,
-		IdentObj.make({ identExp: x }),
-		power.value - 1,
-	);
+export const powerRule = Effect.fn("diff.powerRule")(
+	(coeff: IntegerObj, power: IntegerObj, x: IdentExp) =>
+		Effect.succeed(
+			newTerm(
+				coeff.value * power.value,
+				IdentObj.make({ identExp: x }),
+				power.value - 1,
+			),
+		),
+);
 
-export const constantRule = () => Effect.succeed(IntegerObj.make({ value: 0 }));
+export const constantRule = Effect.fn("diff.constantRule")(() =>
+	Effect.succeed(IntegerObj.make({ value: 0 })),
+);
 
 export const recursivelySubstitute = Effect.fn("diff.recursivelySubstitute")(
 	(

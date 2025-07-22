@@ -26,6 +26,6 @@ ManagedRuntime.make(
 ).runPromise(
 	program("diff(fn (x) { 1 / (2 * x + 3) })(3)").pipe(
 		Effect.provide(NodeSdkLive),
-		Effect.catchAllCause(Effect.logError),
+		Effect.catchAllCause(Effect.logInfo),
 	),
 );

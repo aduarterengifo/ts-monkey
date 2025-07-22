@@ -189,8 +189,8 @@ export const Eval =
 	> =>
 		nodeEvalMatch(env)(node).pipe(Effect.withSpan("eval.Eval"));
 
-export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
-	Effect.gen(function* () {
+export const evalDiff = (diffExp: DiffExp) =>
+	Effect.fn("eval.Diff")(function* (env: Environment) {
 		// yield* logDebug('evalDiff')
 		// this is during running this function. the diff function to be sure! so it will return a number
 		// NEED to do a soft eval of all the expressions here.
@@ -199,15 +199,12 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 			outer: env.outer,
 			idents: [...env.idents, ...diffExp.params],
 		});
-		yield* Effect.log("soft eval:");
 		const softEval = yield* Eval(diffExp.exp)(newEnv).pipe(
 			Effect.flatMap(Schema.decodeUnknown(PolynomialObj)),
 		);
 
-		yield* Effect.log("diff:");
 		const diffSoftEval = yield* diffPolynomial(softEval, diffExp.params[0]);
 
-		yield* Effect.log("diff-eval", diffSoftEval);
 		// maybe simplest will be to convert back to exp and Eval.
 		const convertToExp = (obj: PolynomialObj): Effect.Effect<Exp, ParseError> =>
 			Match.value(obj).pipe(
@@ -265,7 +262,9 @@ export const evalDiff = (diffExp: DiffExp) => (env: Environment) =>
 															),
 															Match.tag("FunctionObj", ({ params, body }) =>
 																FuncExp.make({
-																	token: fnTokenSchema.make({ literal: "fn" }),
+																	token: fnTokenSchema.make({
+																		literal: "fn",
+																	}),
 																	parameters: params,
 																	body,
 																}),
