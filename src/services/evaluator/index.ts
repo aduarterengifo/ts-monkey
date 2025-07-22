@@ -89,7 +89,6 @@ const nodeEvalMatch = (env: Environment) =>
 		IdentExp: (ident) =>
 			Effect.gen(function* () {
 				if (env.idents.some((id) => IdentExpEq(id, ident))) {
-					yield* Effect.log(`ident: ${nodeString(ident)} is contaminated`);
 					return yield* Effect.succeed(IdentObj.make({ identExp: ident }));
 				}
 				return yield* evalIdentExpression(ident, env);
