@@ -27,7 +27,7 @@ import { OpInfixExp } from "src/schemas/nodes/exps/infix";
 import { nativeToIntExp } from "src/schemas/nodes/exps/int";
 import { type Exp, isIdentExp } from "src/schemas/nodes/exps/union";
 import type { Program } from "src/schemas/nodes/program";
-import { BlockStmt } from "src/schemas/nodes/stmts/block";
+import type { BlockStmt } from "src/schemas/nodes/stmts/block";
 import type { Stmt } from "src/schemas/nodes/stmts/union";
 import { type KNode, matchKnode, nodeString } from "src/schemas/nodes/union";
 import type { PrefixOperator } from "src/schemas/prefix-operator";
@@ -232,51 +232,29 @@ export const evalDiff = (diffExp: DiffExp) =>
 							),
 						),
 					).pipe(
-						Effect.flatMap((args) =>
+						Effect.flatMap((convertedArgs) =>
 							Effect.succeed(
 								CallExp.make({
-									token: { _tag: "fn", literal: "fn" },
-									fn: FuncExp.make({
-										token: { _tag: "fn", literal: "fn" },
-										parameters: diffExp.params, // LIMITATION TO A SINGLE VARIABLE FUNCTIONS.
-										body: BlockStmt.make({
-											token: { _tag: "!", literal: "!" }, // FIX eventually
-											statements: [
-												ExpStmt.make({
-													token: {
-														_tag: "!",
-														literal: "!",
-													},
-													expression: CallExp.make({
-														token: {
-															_tag: "!",
-															literal: "!",
-														},
-														fn: Match.value(fn).pipe(
-															Match.tag("BuiltInObj", ({ fn }) =>
-																IdentExp.make({
-																	token: { _tag: "IDENT", literal: fn },
-																	value: fn,
-																}),
-															),
-															Match.tag("FunctionObj", ({ params, body }) =>
-																FuncExp.make({
-																	token: fnTokenSchema.make({
-																		literal: "fn",
-																	}),
-																	parameters: params,
-																	body,
-																}),
-															),
-															Match.exhaustive,
-														),
-														args,
-													}),
+									token: { _tag: "(", literal: "(" },
+									fn: Match.value(fn).pipe(
+										Match.tag("BuiltInObj", ({ fn }) =>
+											IdentExp.make({
+												token: { _tag: "IDENT", literal: fn },
+												value: fn,
+											}),
+										),
+										Match.tag("FunctionObj", ({ params, body }) =>
+											FuncExp.make({
+												token: fnTokenSchema.make({
+													literal: "fn",
 												}),
-											],
-										}),
-									}),
-									args,
+												parameters: params,
+												body,
+											}),
+										),
+										Match.exhaustive,
+									),
+									args: convertedArgs,
 								}),
 							),
 						),
