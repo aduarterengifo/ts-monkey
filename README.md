@@ -33,3 +33,47 @@ with extensions for symbolic differentiation.
     -  [ ] pass ident as second arg. 
 - [ ] release as package
 - [ ] errors should error
+
+## WHY 
+
+But, why?
+
+Why would you want symbolic differentation at the language level?
+
+#### Alternative
+
+```ts
+import {nerdamer} from 'nerdamer'
+
+const fPrime = nerdamer('diff(x^2+2*(cos(x)+x*x),x)')
+```
+
+Pitfalls 
+
+to the compiler the diff expression is just a string, 
+so we are not 
+- protected from typos.
+- supported by linters. 
+
+```ts
+const fPrime = nerdamer('diff(x^2+2*(cos(x+x*x),x)')
+```
+
+composition breaks down.
+
+```ts 
+let f = `sin(x)`
+let g = `3x + 2`
+
+diff(?)
+```
+
+vs
+
+```ts 
+let f = fn(x) { sin(x) }
+let g = fn(x) { 3x + 2 }
+
+diff(f(g))
+```
+
