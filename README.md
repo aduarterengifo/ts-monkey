@@ -34,9 +34,7 @@ with extensions for symbolic differentiation.
 - [ ] release as package
 - [ ] errors should error
 
-## WHY 
-
-But, why?
+## Why 
 
 Why would you want symbolic differentation at the language level?
 
